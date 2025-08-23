@@ -10,51 +10,27 @@ const LandingPage = ({ colors }) => {
     const [feedback, setFeedback] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleCreateCompanyAndCheckout = async (e) => {
+    const handleCreateAccount = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setFeedback('');
 
         try {
-            // 1. Create the company in Supabase
-            const { data: companyData, error: companyError } = await supabase
-                .from('companies')
-                .insert([{ name: companyName, max_users: 3 }]) // Default 3 users for initial plan
-                .select()
-                .single();
-
-            if (companyError) throw companyError;
-
-            const companyId = companyData.id;
-
-            // 2. Create Stripe Checkout Session for company creation product
-            const stripe = await stripePromise;
-            const response = await fetch('http://localhost:5001/create-checkout-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    priceId: 'prod_SbIHI2SdjlARwo', // Product ID for company account with 3 users
-                    quantity: 1,
-                    success_url: `${window.location.origin}/signup?companyId=${companyId}&email=${adminEmail}`, // Redirect to signup with companyId
-                    cancel_url: window.location.origin + '/landing', // Redirect back to landing on cancel
-                    metadata: { company_id: companyId }, // Pass company_id to webhook
-                }),
-            });
-
-            const session = await response.json();
-
-            const result = await stripe.redirectToCheckout({
-                sessionId: session.id,
-            });
-
-            if (result.error) {
-                console.error(result.error.message);
-                setFeedback(`Erreur lors de la redirection vers le paiement: ${result.error.message}`);
+            // Validation simple
+            if (!companyName || !adminEmail) {
+                throw new Error('Veuillez remplir tous les champs.');
             }
+
+            // Rediriger vers la page d'inscription avec les informations
+            const params = new URLSearchParams({
+                companyName: companyName,
+                email: adminEmail
+            });
+            window.location.href = `/signup?${params.toString()}`;
+
         } catch (error) {
-            console.error('Error creating company or checkout session:', error);
-            setFeedback(`Erreur: ${error.message}`);
-        } finally {
+            console.error('Error:', error);
+            setFeedback(error.message || 'Une erreur est survenue.');
             setIsLoading(false);
         }
     };
@@ -65,7 +41,7 @@ const LandingPage = ({ colors }) => {
                 <h1 className="text-3xl font-bold mb-6" style={{ color: colors.primary }}>Bienvenue sur REVO</h1>
                 <p className="text-gray-600 mb-8">Simplifiez la gestion de vos chantiers. Créez votre compte et invitez votre équipe.</p>
 
-                <form onSubmit={handleCreateCompanyAndCheckout} className="space-y-4">
+                <form onSubmit={handleCreateAccount} className="space-y-4">
                     <div>
                         <label htmlFor="companyName" className="sr-only">Nom de la société</label>
                         <input
@@ -95,7 +71,7 @@ const LandingPage = ({ colors }) => {
                         disabled={isLoading}
                         className="w-full px-4 py-2 text-white font-semibold rounded-md transition-colors disabled:opacity-50 bg-primary"
                     >
-                        {isLoading ? 'Chargement...' : 'Créer ma société et souscrire'}
+                        {isLoading ? 'Chargement...' : 'Créer mon compte'}
                     </button>
                 </form>
 

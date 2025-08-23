@@ -14,19 +14,16 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const urlCompanyId = params.get('companyId');
+        const urlCompanyName = params.get('companyName');
         const urlEmail = params.get('email');
 
-        if (urlCompanyId) {
-            setCompanyId(urlCompanyId);
-            if (companyInfo && companyInfo.id === urlCompanyId) {
-                setCompanyName(companyInfo.name);
-            }
+        if (urlCompanyName) {
+            setCompanyName(urlCompanyName);
         }
         if (urlEmail) {
             setEmail(urlEmail);
         }
-    }, [companyInfo]);
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -34,41 +31,62 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
         setError(null);
         setSuccessMessage('');
 
-        if (!companyId) {
-            setError("Erreur: ID de société manquant. Veuillez passer par la page d'accueil pour créer un compte.");
+        if (!companyName) {
+            setError("Erreur: Nom de société manquant. Veuillez passer par la page d'accueil.");
             setLoading(false);
             return;
         }
 
         try {
-            // Fetch current user count for the company
-            const { count: currentUsers, error: countError } = await supabase
-                .from('profiles')
-                .select('id', { count: 'exact' })
-                .eq('company_id', companyId);
-
-            if (countError) throw countError;
-
-            if (companyInfo && currentUsers >= companyInfo.max_users) {
-                setError(`Limite d'utilisateurs atteinte pour cette société (${companyInfo.max_users} utilisateurs). Veuillez contacter l'administrateur de la société pour augmenter la limite.`);
-                setLoading(false);
-                return;
-            }
-
-            const { data, error } = await supabase.auth.signUp({
+            // 1. D'abord créer le compte utilisateur
+            const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
                     data: {
                         full_name: name,
-                        company_id: companyId, // Pass company_id to the new user's profile
-                        email: email
+                        email: email,
+                        is_company_admin: true // Marquer comme admin de société
                     }
                 }
             });
 
-            if (error) {
-                throw error;
+            if (authError) {
+                throw authError;
+            }
+
+            // 2. Ensuite créer la société avec l'utilisateur authentifié
+            if (authData.user) {
+                const { data: companyData, error: companyError } = await supabase
+                    .from('companies')
+                    .insert([{ 
+                        name: companyName, 
+                        max_users: 3,
+                        created_by: authData.user.id
+                    }])
+                    .select()
+                    .single();
+
+                if (companyError) {
+                    console.error('Erreur création société:', companyError);
+                    // Si la création de société échoue, on continue quand même
+                    // L'utilisateur pourra créer la société plus tard
+                }
+
+                // 3. Mettre à jour le profil utilisateur avec company_id
+                if (companyData) {
+                    const { error: profileError } = await supabase
+                        .from('profiles')
+                        .update({ 
+                            company_id: companyData.id,
+                            role: 'admin'
+                        })
+                        .eq('id', authData.user.id);
+
+                    if (profileError) {
+                        console.error('Erreur mise à jour profil:', profileError);
+                    }
+                }
             }
 
             setSuccessMessage("Compte créé avec succès ! Veuillez vérifier votre boîte mail pour confirmer votre inscription.");
@@ -98,7 +116,7 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
                         {/* --- AJOUT : Champ pour le nom de la société --- */}
                         <div>
                             <label htmlFor="companyName" className="text-sm font-medium text-gray-700">Nom de votre société</label>
-                            <input type="text" name="companyName" id="companyName" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} disabled={!!companyId}
+                            <input type="text" name="companyName" id="companyName" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} disabled={!!new URLSearchParams(window.location.search).get('companyName')}
                                 className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
                             />
                         </div>
