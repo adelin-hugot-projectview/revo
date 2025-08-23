@@ -38,80 +38,35 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
         }
 
         try {
-            // 1. D'abord créer le compte utilisateur SANS métadonnées complexes
+            console.log('🔄 Début de la création utilisateur...');
+            
+            // Test ULTRA simplifié - juste l'authentification Supabase
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: email,
                 password: password
             });
 
+            console.log('📝 Réponse auth.signUp:', { authData, authError });
+
             if (authError) {
+                console.error('❌ Erreur auth.signUp:', authError);
                 throw authError;
             }
 
-            // 2. Attendre un peu que le profil soit créé par le trigger (si il existe)
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // 3. Créer ou mettre à jour le profil explicitement
             if (authData.user) {
-                // D'abord vérifier si le profil existe
-                const { data: existingProfile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('id', authData.user.id)
-                    .single();
-
-                if (!existingProfile) {
-                    // Créer le profil s'il n'existe pas
-                    const { error: createProfileError } = await supabase
-                        .from('profiles')
-                        .insert([{
-                            id: authData.user.id,
-                            full_name: name,
-                            email: email,
-                            role: 'admin'
-                        }]);
-
-                    if (createProfileError) {
-                        console.error('Erreur création profil:', createProfileError);
-                        throw new Error(`Impossible de créer le profil utilisateur: ${createProfileError.message}`);
-                    }
-                }
-
-                // 4. Créer la société
-                const { data: companyData, error: companyError } = await supabase
-                    .from('companies')
-                    .insert([{ 
-                        name: companyName, 
-                        max_users: 3,
-                        created_by: authData.user.id
-                    }])
-                    .select()
-                    .single();
-
-                if (companyError) {
-                    console.error('Erreur création société:', companyError);
-                    throw new Error(`Impossible de créer la société: ${companyError.message}`);
-                }
-
-                // 5. Mettre à jour le profil avec company_id
-                const { error: updateProfileError } = await supabase
-                    .from('profiles')
-                    .update({ 
-                        company_id: companyData.id,
-                        role: 'admin'
-                    })
-                    .eq('id', authData.user.id);
-
-                if (updateProfileError) {
-                    console.error('Erreur mise à jour profil:', updateProfileError);
-                    throw new Error(`Impossible de lier l'utilisateur à la société: ${updateProfileError.message}`);
-                }
+                console.log('✅ Utilisateur créé avec succès:', authData.user.id);
+                setSuccessMessage(`Compte créé avec succès ! Utilisateur ID: ${authData.user.id}. Vérifiez votre email pour confirmer.`);
+            } else {
+                console.warn('⚠️ Pas de données utilisateur retournées');
+                setSuccessMessage("Demande de création de compte envoyée ! Vérifiez votre email.");
             }
 
-            setSuccessMessage("Compte créé avec succès ! Veuillez vérifier votre boîte mail pour confirmer votre inscription.");
+            // TEMPORAIREMENT: On ne fait RIEN d'autre pour isoler le problème
+            // Pas de création de profil, pas de société, rien d'autre
 
         } catch (error) {
-            setError(error.message || "Une erreur est survenue lors de la création du compte.");
+            console.error('💥 Erreur complète:', error);
+            setError(`Erreur: ${error.message || error.error_description || "Erreur inconnue"}`);
         } finally {
             setLoading(false);
         }
