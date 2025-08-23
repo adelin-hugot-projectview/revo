@@ -1,141 +1,448 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Menu } from 'lucide-react';
+import { supabase } from './supabaseClient';
+
+// Import des composants
 import Sidebar from './components/Sidebar.jsx';
 import SidePanel from './components/SidePanel.jsx';
 import SiteDetail from './components/details/SiteDetail.jsx';
 import ClientDetail from './components/details/ClientDetail.jsx';
 import SiteCreationModal from './components/SiteCreationModal.jsx';
+import ClientCreationModal from './components/ClientCreationModal.jsx';
+import StatusBadge from './components/details/StatusBadge.jsx';
+import StatusManagementModal from './components/StatusManagementModal.jsx';
+
+
 import Dashboard from './pages/Dashboard.jsx';
+import CalendarPage from './pages/CalendarPage.jsx';
 import MapPage from './pages/MapPage.jsx';
 import SitesListPage from './pages/SitesListPage.jsx';
+import SitesKanbanPage from './pages/SitesKanbanPage.jsx';
 import ClientsPage from './pages/ClientsPage.jsx';
-import StaffPage from './pages/StaffPage.jsx';
+import TemplatesPage from './pages/TemplatesPage.jsx';
 import CompanyPage from './pages/CompanyPage.jsx';
+import SubscriptionPage from './pages/SubscriptionPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
-import CalendarPage from './pages/CalendarPage.jsx';
-import TemplatesPage from './pages/TemplatesPage.jsx';
-
-// --- DONNÉES DE DÉMONSTRATION ---
-const allSitesData = [ { id: 1, name: 'Installation panneaux S.', clientId: 'client-1', client: 'Mr Dupont', clientEmail: 'jean.dupont@email.com', clientPhone: '06 11 22 33 44', date: '2025-06-16', startTime: '09:00', endTime: '13:00', type: 'success', lat: 45.7820, lng: 4.8722, address: '15 Rue de la Soie, 69100 Villeurbanne', status: 'Terminé', team: 'Équipe Alpha', comments: "Le client souhaite être appelé 30 minutes avant l'arrivée. Accès par le portail de droite.", history: [{ date: '2025-06-16', user: 'Bob Garcia', action: 'Chantier marqué comme "Terminé".' }], checklist: [{text: "Vérifier le matériel", done: true}, {text: "Contacter le client", done: true}] } ];
-const initialStaff = [ { id: 'user-1', name: 'Alice Martin', email: 'alice.martin@zuno.fr', role: 'Administrateur', team: '', avatar: 'https://placehold.co/100x100/2B5F4C/FFFFFF?text=AM' } ];
-const initialTodos = [ { id: 1, text: 'Commander matériaux pour Villa Dupont', done: false, siteId: 1 } ];
-const initialCompanyInfo = { name: 'Zuno Construction', siret: '123 456 789 00010', address: '123 Rue de la République', city: 'Lyon', postalCode: '69001', logo: '' };
-const allTeams = ['Équipe Alpha', 'Équipe Bêta', 'Équipe Gamma'];
-const initialChecklistTemplates = [
-  { id: 'clt-1', name: 'Check-list standard d\'installation', tasks: ['Vérifier le matériel', 'Préparer la zone de travail', 'Contacter le client avant arrivée', 'Nettoyer le chantier après intervention', 'Faire signer le bon de fin de chantier'] },
-  { id: 'clt-2', name: 'Check-list de maintenance chaudière', tasks: ['Vérifier la pression', 'Nettoyer le corps de chauffe', 'Contrôler le monoxyde de carbone'] },
-];
-const initialEmailTemplates = [
-  { id: 'emt-1', name: 'Confirmation de RDV', subject: 'Confirmation de votre rendez-vous Zuno', body: 'Bonjour [Client Name],\n\nNous vous confirmons votre rendez-vous le [Date] à [Heure].\n\nCordialement,\nL\'équipe Zuno' },
-];
+import LandingPage from './pages/LandingPage.jsx';
 
 export default function App() {
-    const [isAuthenticated, setIsAuthenticated] = useState(true);
+    // --- ÉTATS ---
+    const [session, setSession] = useState(null);
+    const [appLoading, setAppLoading] = useState(true);
     const [authPage, setAuthPage] = useState('login');
-    const [currentUser, setCurrentUser] = useState(initialStaff[0]);
+    const [companyInfo, setCompanyInfo] = useState(null);
+    const [sites, setSites] = useState([]);
+    const [clients, setClients] = useState([]);
+    const [todos, setTodos] = useState([]);
+    const [teams, setTeams] = useState([]);
+    const [checklistTemplates, setChecklistTemplates] = useState([]);
     const [activePage, setActivePage] = useState('Dashboard');
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [sites, setSites] = useState(allSitesData);
-    const [staff, setStaff] = useState(initialStaff);
-    const [todos, setTodos] = useState(initialTodos);
-    const [companyInfo, setCompanyInfo] = useState(initialCompanyInfo);
+    const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [selectedSite, setSelectedSite] = useState(null);
     const [selectedClient, setSelectedClient] = useState(null);
-    const [checklistTemplates, setChecklistTemplates] = useState(initialChecklistTemplates);
-    const [emailTemplates, setEmailTemplates] = useState(initialEmailTemplates);
     const [isSiteModalOpen, setIsSiteModalOpen] = useState(false);
+    const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [newTodoText, setNewTodoText] = useState('');
+    const [kanbanColumns, setKanbanColumns] = useState([]); // Utilisé comme "statuts"
+    const [currentUserRole, setCurrentUserRole] = useState(null); // AJOUT : État pour le rôle de l'utilisateur actuel
 
-    
-    const handleLogin = (email, password) => { 
-        const user = initialStaff.find(u => u.email === email);
-        if (user) { setCurrentUser(user); setIsAuthenticated(true); } else { alert('Utilisateur non trouvé !'); }
-    };
-    
-    const handleSignup = (userData) => { 
-        const newUser = { ...userData, id: `user-${Date.now()}`, avatar: `https://placehold.co/100x100/2B5F4C/FFFFFF?text=${userData.name.substring(0,2).toUpperCase()}`};
-        setStaff([...staff, newUser]);
-        setCurrentUser(newUser);
-        setIsAuthenticated(true);
-    };
-
-    const handleSaveSite = (newSiteData) => {
-        const selectedTemplate = checklistTemplates.find(t => t.id === newSiteData.checklistTemplateId);
-        const newSite = {
-            ...newSiteData,
-            id: `site-${Date.now()}`,
-            lat: 45.76,
-            lng: 4.85,
-            type: 'accent',
-            history: [{ date: new Date().toISOString().split('T')[0], user: currentUser.name, action: 'Chantier créé.' }],
-            checklist: selectedTemplate ? selectedTemplate.tasks.map(task => ({ text: task, done: false })) : []
-        };
-        setSites(prevSites => [...prevSites, newSite]);
-    };
-
-    const clients = useMemo(() => {
-        const clientsMap = sites.reduce((acc, site) => {
-            if (!acc[site.clientId]) { acc[site.clientId] = { id: site.clientId, name: site.client, phone: site.clientPhone, email: site.clientEmail, sites: [], address: site.address }; }
-            acc[site.clientId].sites.push(site);
-            return acc;
-        }, {});
-        return Object.values(clientsMap);
-    }, [sites]);
-
-    const navigateTo = (page) => setActivePage(page);
-    const handleOpenSite = (site) => { setSelectedClient(null); setSelectedSite(site); };
-    const handleOpenClient = (client) => { setSelectedSite(null); setSelectedClient(client); };
-    const handleClosePanel = () => { setSelectedSite(null); setSelectedClient(null); };
-    
     const colors = { primary: '#2B5F4C', secondary: '#E1F2EC', accent: '#FFBB33', neutralDark: '#222222', neutralLight: '#F8F9FA', danger: '#E74C3C', success: '#2ECC71' };
 
-    if (!isAuthenticated) {
-        if (authPage === 'login') return <LoginPage onLogin={handleLogin} onSwitchToSignup={() => setAuthPage('signup')} colors={colors} />;
-        return <SignupPage onSignup={handleSignup} onSwitchToLogin={() => setAuthPage('login')} colors={colors} />;
-    }
-    
-    const isPanelOpen = !!(selectedSite || selectedClient);
-    
-    const PageContent = () => {
-        switch (activePage) {
-            case 'Dashboard': return <Dashboard colors={colors} sites={sites} setSites={setSites} todos={todos} setTodos={setTodos} onSiteClick={handleOpenSite} onAddSite={() => setIsSiteModalOpen(true)} />;
-            case 'Calendar': return <CalendarPage colors={colors} sites={sites} onSiteClick={handleOpenSite} />;
-            case 'Map': return <MapPage colors={colors} sites={sites} onSiteClick={handleOpenSite} onAddSite={() => setIsSiteModalOpen(true)} />;
-            case 'Sites': return <SitesListPage colors={colors} sites={sites} onSiteClick={handleOpenSite} onAddSite={() => setIsSiteModalOpen(true)} />;
-            case 'Clients': return <ClientsPage colors={colors} clients={clients} onClientClick={handleOpenClient} onAddSite={() => setIsSiteModalOpen(true)} />;
-            case 'Templates': return <TemplatesPage colors={colors} checklistTemplates={checklistTemplates} setChecklistTemplates={setChecklistTemplates} emailTemplates={emailTemplates} setEmailTemplates={setEmailTemplates} />;
-            case 'Staff': return <StaffPage colors={colors} staff={staff} setStaff={setStaff} teams={allTeams} />;
-            case 'Company': return <CompanyPage colors={colors} companyInfo={companyInfo} setCompanyInfo={setCompanyInfo} />;
-            case 'Profile': return <ProfilePage colors={colors} currentUser={currentUser} setCurrentUser={setCurrentUser} />;
-            default: return <div>Page en construction</div>;
+    // --- GESTION DE LA SESSION SUPABASE ---
+    useEffect(() => {
+        setAppLoading(true);
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setSession(session); });
+        return () => subscription.unsubscribe();
+    }, []);
+
+    // --- CHARGEMENT DES DONNÉES DEPUIS SUPABASE ---
+    useEffect(() => {
+        if (!session) {
+            setCompanyInfo(null); setSites([]); setClients([]); setTodos([]); setTeams([]); setChecklistTemplates([]); setKanbanColumns([]);
+            setAppLoading(false);
+            return;
+        }
+        
+        const fetchData = async () => {
+            setAppLoading(true);
+            try {
+                // D'abord, récupérer le profil utilisateur pour obtenir company_id
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) throw userError;
+
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('company_id, role')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileError) {
+                    console.error('Erreur (profil utilisateur):', profileError.message);
+                    throw new Error('Impossible de charger le profil utilisateur');
+                }
+
+                const companyId = profile?.company_id;
+                if (!companyId) {
+                    console.error('Aucune société associée à cet utilisateur');
+                    throw new Error('Aucune société associée à cet utilisateur');
+                }
+
+                // Ensuite, charger les données en utilisant company_id
+                const [
+                    companyRes,
+                    sitesRes,
+                    clientsRes,
+                    teamsRes,
+                    kanbanColumnsRes,
+                    templatesRes,
+                    todosRes
+                ] = await Promise.all([
+                    supabase.from('companies').select('*, stripe_customer_id, max_users').eq('id', companyId).single(),
+                    supabase.from('sites').select('*, client:clients(*), team:teams(id, name), status:kanban_columns(id, name, color, position), start_date, end_date').eq('company_id', companyId).order('position', { ascending: true }),
+                    supabase.from('clients').select('*').eq('company_id', companyId),
+                    supabase.from('teams').select('*').eq('company_id', companyId),
+                    supabase.from('kanban_columns').select('*').eq('company_id', companyId).order('position'),
+                    supabase.from('checklist_templates').select('*').eq('company_id', companyId),
+                    supabase.from('todos').select('*, site_id').eq('user_id', session.user.id)
+                ]);
+
+                // Gestion d'erreur améliorée avec des messages spécifiques
+                if (companyRes.error) {
+                    console.error('Erreur (société):', companyRes.error.message);
+                    throw new Error(`Impossible de charger les informations de la société: ${companyRes.error.message}`);
+                } else {
+                    setCompanyInfo(companyRes.data);
+                }
+
+                // Définir le rôle utilisateur
+                setCurrentUserRole(profile.role);
+            
+                if (clientsRes.error) {
+                    console.error('Erreur (clients):', clientsRes.error.message);
+                    throw new Error(`Impossible de charger les clients: ${clientsRes.error.message}`);
+                } else {
+                    setClients(clientsRes.data || []);
+                }
+
+                if (teamsRes.error) {
+                    console.error('Erreur (équipes):', teamsRes.error.message);
+                    throw new Error(`Impossible de charger les équipes: ${teamsRes.error.message}`);
+                } else {
+                    setTeams(teamsRes.data || []);
+                }
+
+                if (templatesRes.error) {
+                    console.error('Erreur (modèles):', templatesRes.error.message);
+                    throw new Error(`Impossible de charger les modèles: ${templatesRes.error.message}`);
+                } else {
+                    setChecklistTemplates(templatesRes.data || []);
+                }
+
+                if (kanbanColumnsRes.error) {
+                    console.error('Erreur (statuts):', kanbanColumnsRes.error.message);
+                    throw new Error(`Impossible de charger les statuts: ${kanbanColumnsRes.error.message}`);
+                } else {
+                    setKanbanColumns(kanbanColumnsRes.data || []);
+                }
+                
+                if (sitesRes.error) {
+                    console.error('Erreur (chantiers):', sitesRes.error.message);
+                    throw new Error(`Impossible de charger les chantiers: ${sitesRes.error.message}`);
+                } else {
+                    const formattedSites = sitesRes.data.map(site => ({
+                        ...site,
+                        client: site.client ? site.client.name : 'Client non défini',
+                        clientData: site.client,
+                        team: site.team,
+                        startTime: site.start_time,
+                        endTime: site.end_time,
+                        startDate: site.start_date,
+                        endDate: site.end_date,
+                    }));
+                    setSites(formattedSites);
+                }
+
+                if (todosRes.error) {
+                    console.error('Erreur (todos):', todosRes.error.message);
+                    throw new Error(`Impossible de charger les tâches: ${todosRes.error.message}`);
+                } else {
+                    setTodos(todosRes.data.map(todo => ({ id: todo.id, text: todo.task, done: todo.is_complete, completed_at: todo.completed_at, site_id: todo.site_id })));
+                }
+
+            } catch (error) {
+                console.error('Erreur lors du chargement des données:', error.message);
+                // Optionnel: afficher un message d'erreur à l'utilisateur
+                // setErrorMessage(error.message);
+            } finally {
+                setAppLoading(false);
+            }
+        };
+        fetchData();
+    }, [session]);
+
+    // --- FONCTIONS DE GESTION ---
+    const handleLogout = async () => { await supabase.auth.signOut(); setActivePage('Dashboard'); };
+
+
+    const handleUpdateSite = async (siteId, updates) => {
+        const originalSites = [...sites];
+        const originalSelectedSite = selectedSite ? { ...selectedSite } : null;
+
+        const updatedSites = sites.map(site => {
+            if (site.id === siteId) {
+                const newStatus = updates.kanban_column_id
+                    ? kanbanColumns.find(c => c.id === updates.kanban_column_id)
+                    : site.status;
+                return {
+                    ...site,
+                    ...updates,
+                    status: newStatus || site.status
+                };
+            }
+            return site;
+        });
+
+        setSites(updatedSites);
+
+        if (selectedSite && selectedSite.id === siteId) {
+            const updatedSelectedSiteData = updatedSites.find(s => s.id === siteId);
+            setSelectedSite(updatedSelectedSiteData);
+        }
+
+        const { data, error } = await supabase
+            .from('sites')
+            .update(updates)
+            .eq('id', siteId)
+            .select('*, client:clients(*), team:teams(id, name), status:kanban_columns(id, name, color, position)')
+            .single();
+
+        if (error) {
+            console.error('Erreur Supabase (update site):', error);
+            setSites(originalSites);
+            if (originalSelectedSite) {
+                setSelectedSite(originalSelectedSite);
+            }
+            alert("La mise à jour a échoué. Veuillez réessayer.");
+        } else {
+            const formattedSite = {
+                ...data,
+                client: data.client ? data.client.name : 'Client non défini',
+                clientData: data.client,
+                team: data.team,
+                startTime: data.start_time,
+                endTime: data.end_time,
+                startDate: data.start_date,
+                endDate: data.end_date
+            };
+            setSites(prevSites => prevSites.map(site => site.id === siteId ? formattedSite : site));
+            if (selectedSite && selectedSite.id === siteId) {
+                setSelectedSite(formattedSite);
+            }
+        }
+    };
+
+    const handleUpdateSiteOrder = async (updatedSitesData) => {
+        if (updatedSitesData.length === 0) return;
+
+        // Utiliser Promise.all pour envoyer toutes les mises à jour concurremment
+        const updatePromises = updatedSitesData.map(async (updatedSite) => {
+            const { error } = await supabase
+                .from('sites')
+                .update({
+                    kanban_column_id: updatedSite.kanban_column_id,
+                    position: updatedSite.position,
+                })
+                .eq('id', updatedSite.id);
+
+            if (error) {
+                console.error(`Erreur Supabase (update site ${updatedSite.id} order):`, error);
+                return { id: updatedSite.id, success: false, error };
+            }
+            return { id: updatedSite.id, success: true };
+        });
+
+        await Promise.all(updatePromises);
+
+        // Re-fetch sites to ensure correct order and data consistency after all updates are done
+        const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('*, client:clients(name), team:teams(id, name), status:kanban_columns(id, name, color, position)').order('position', { ascending: true });
+        if (sitesError) {
+            console.error('Erreur (re-fetch chantiers):', sitesError.message);
+        } else {
+            const formattedSites = sitesRes.map(site => ({
+                ...site,
+                client: site.client ? site.client.name : 'Client non défini',
+                clientData: site.client,
+                team: site.team,
+                startTime: site.start_time,
+                endTime: site.end_time,
+                startDate: site.start_date,
+                endDate: site.end_date,
+            }));
+            setSites(formattedSites);
         }
     };
     
-    let panelContent = null, panelTitle = '', panelWidthClass = 'max-w-md';
-    if (selectedSite) { panelContent = <SiteDetail site={selectedSite} colors={colors} setSites={setSites} />; panelTitle = selectedSite.name; panelWidthClass = 'max-w-xl'; }
-    else if (selectedClient) { panelContent = <ClientDetail client={selectedClient} onSiteClick={handleOpenSite} />; panelTitle = selectedClient.name; }
+    const handleSaveStatusColumns = async (updatedStatuses) => {
+        const upserts = updatedStatuses.map((status, index) => ({
+            id: status.id,
+            name: status.name,
+            color: status.color,
+            position: index,
+            company_id: companyInfo.id
+        }));
+
+        const { data, error } = await supabase.from('kanban_columns').upsert(upserts).select();
+
+        if (error) {
+            console.error('Erreur (maj statuts):', error);
+        } else {
+            setKanbanColumns(data.sort((a, b) => a.position - b.position));
+        }
+    };
+
+    const handleDeleteStatusColumn = async (statusId) => {
+        // Vérifier si le statut est utilisé
+        const sitesWithStatus = sites.filter(s => s.status?.id === statusId);
+        if (sitesWithStatus.length > 0) {
+            alert('Ce statut est utilisé par des chantiers et ne peut pas être supprimé.');
+            return;
+        }
+
+        const { error } = await supabase.from('kanban_columns').delete().eq('id', statusId);
+        if (error) {
+            console.error('Erreur (suppression statut):', error);
+        } else {
+            setKanbanColumns(prev => prev.filter(s => s.id !== statusId));
+        }
+    };
+
+    const navigateTo = (page) => { setActivePage(page); setIsMobileMenuOpen(false); };
+    const handleOpenSite = (site) => { setSelectedClient(null); setSelectedSite(site); };
+    const handleOpenClient = (client) => { setSelectedSite(null); setSelectedClient(client); };
+    const handleClosePanel = () => { setSelectedSite(null); setSelectedClient(null); };
+
+    // --- FONCTIONS DE GESTION DES TODOS ---
+    const handleAddTodo = async (taskText) => {
+        if (!session || !companyInfo) return;
+        const { data, error } = await supabase.from('todos').insert({
+            user_id: session.user.id,
+            company_id: companyInfo.id,
+            task: taskText,
+        }).select().single();
+        if (error) {
+            console.error('Erreur (ajout todo):', error);
+        } else {
+            console.log('Nouvelle tâche ajoutée à Supabase:', data);
+            setTodos(prev => {
+                const updatedTodos = [...prev, { id: data.id, text: data.task, done: data.is_complete, completed_at: data.completed_at, site_id: data.site_id }];
+                console.log('Todos après ajout:', updatedTodos);
+                return updatedTodos;
+            });
+        }
+    };
+
+    const handleToggleTodo = async (todoId, currentStatus) => {
+        const newStatus = !currentStatus;
+        const { error } = await supabase.from('todos').update({ is_complete: newStatus, completed_at: newStatus ? new Date().toISOString() : null }).eq('id', todoId);
+        if (error) {
+            console.error('Erreur (toggle todo):', error);
+        } else {
+            setTodos(prev => prev.map(todo => todo.id === todoId ? { ...todo, done: newStatus, completed_at: newStatus ? new Date().toISOString() : null } : todo));
+        }
+    };
+
+    const handleDeleteTodo = async (todoId) => {
+        const { error } = await supabase.from('todos').delete().eq('id', todoId);
+        if (error) {
+            console.error('Erreur (suppression todo):', error);
+        } else {
+            setTodos(prev => prev.filter(todo => todo.id !== todoId));
+        }
+    };
+
+    // --- RENDU ---
+    if (appLoading) return <div className="h-screen w-screen flex justify-center items-center font-bold text-xl text-primary">Chargement de REVO...</div>;
+
+    // Determine if we are on a public path (landing, login, signup)
+    const isPublicPath = window.location.pathname === '/' || window.location.pathname === '/landing' || window.location.pathname === '/login' || window.location.pathname === '/signup';
+
+    if (!session) {
+        if (isPublicPath) {
+            switch (window.location.pathname) {
+                case '/login': return <LoginPage onSwitchToSignup={() => setAuthPage('signup')} colors={colors} companyInfo={companyInfo} />;
+                case '/signup': return <SignupPage onSwitchToLogin={() => setAuthPage('login')} colors={colors} companyInfo={companyInfo} />;
+                default: return <LandingPage colors={colors} />;
+            }
+        } else {
+            // If no session and not on a public path, redirect to landing
+            window.location.href = '/';
+            return null; // Or a loading spinner
+        }
+    }
+
+    const isPanelOpen = !!(selectedSite || selectedClient);
+    
+    const renderActivePage = () => {
+        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanColumns, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalModal(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
+        switch (activePage) {
+            case 'Dashboard': return <Dashboard {...pageProps} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} onAddTodo={handleAddTodo} onToggleTodo={handleToggleTodo} onDeleteTodo={handleDeleteTodo} />;
+            case 'Chantiers': return <SitesListPage {...pageProps} />;
+            case 'Kanban': 
+                return <SitesKanbanPage {...pageProps} />;
+            case 'Calendrier': return <CalendarPage {...pageProps} />;
+            case 'Carte': return <MapPage {...pageProps} />;
+            case 'Clients': return <ClientsPage {...pageProps} />;
+            case 'Templates': return <TemplatesPage colors={colors} />;
+
+            case 'Société': return <CompanyPage companyInfo={companyInfo} setCompanyInfo={setCompanyInfo} colors={colors} currentUserRole={currentUserRole} />;
+            case 'Abonnement': return <SubscriptionPage companyInfo={companyInfo} colors={colors} currentUserRole={currentUserRole} />;
+            case 'Mon Profil': return <ProfilePage colors={colors} currentUser={session.user} />;
+            default: return <div>Page: {activePage}</div>;
+        }
+    };
+
+    let panelHeader = null;
+    let panelContent = null;
+    let panelWidthClass = 'max-w-md';
+
+    if (selectedSite) {
+        const siteData = sites.find(s => s.id === selectedSite.id);
+        if (siteData) {
+            panelHeader = ( <div className="flex items-center justify-between w-full"> <h2 className="text-xl font-bold truncate pr-4">{siteData.name}</h2> <StatusBadge currentStatus={siteData.status} onStatusChange={(newStatusId) => handleUpdateSite(siteData.id, { kanban_column_id: newStatusId })} availableStatuses={kanbanColumns} colors={colors} /> </div> );
+            panelContent = <SiteDetail site={siteData} onUpdateSite={(updates) => handleUpdateSite(siteData.id, updates)} teams={teams} checklistTemplates={checklistTemplates} colors={colors} />;
+            panelWidthClass = 'max-w-xl';
+        }
+    } else if (selectedClient) {
+        const clientData = { ...selectedClient, sites: sites.filter(s => s.client_id === selectedClient.id) };
+        panelHeader = <h2 className="text-xl font-bold">{clientData.name}</h2>;
+        panelContent = <ClientDetail client={clientData} onSiteClick={handleOpenSite} />;
+        panelWidthClass = 'max-w-md';
+    }
 
     return (
         <div className="flex h-screen bg-gray-50 font-['Inter']">
             <style>{`@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Inter:wght@400;500;600&display=swap');`}</style>
-            <Sidebar activePage={activePage} navigateTo={navigateTo} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} colors={colors}/>
-            <main className="flex-1 p-8 overflow-y-auto">
-                 <PageContent />
-            </main>
-            <div className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 z-40 ${isPanelOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={handleClosePanel}></div>
-            <SidePanel title={panelTitle} isOpen={isPanelOpen} onClose={handleClosePanel} colors={colors} widthClass={panelWidthClass}>
-                {panelContent}
-            </SidePanel>
-            <SiteCreationModal 
-                isOpen={isSiteModalOpen}
-                onRequestClose={() => setIsSiteModalOpen(false)}
-                onSave={handleSaveSite}
-                clients={clients}
-                teams={allTeams}
-                checklistTemplates={checklistTemplates}
-                colors={colors}
-            />
+            <Sidebar activePage={activePage} navigateTo={navigateTo} isSidebarOpen={isDesktopSidebarOpen} setIsSidebarOpen={setIsDesktopSidebarOpen} colors={colors} onLogout={handleLogout} currentUserRole={currentUserRole} />
+            {console.log('currentUserRole in App.jsx before passing to Sidebar:', currentUserRole)}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                <header className="md:hidden flex items-center justify-between gap-4 p-4 bg-white border-b shadow-sm">
+                    <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Menu size={24} /></button>
+                </header>
+                <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+                    {renderActivePage()}
+                </main>
+            </div>
+            <SidePanel header={panelHeader} isOpen={isPanelOpen} onClose={handleClosePanel} colors={colors} widthClass={panelWidthClass}> {panelContent} </SidePanel>
+            <SiteCreationModal isOpen={isSiteModalOpen} onRequestClose={() => setIsSiteModalOpen(false)} clients={clients} teams={teams} onSave={handleUpdateSite} colors={colors} checklistTemplates={checklistTemplates} availableStatuses={kanbanColumns} />
+            <ClientCreationModal isOpen={isClientModalOpen} onRequestClose={() => setIsClientModalOpen(false)} onSave={() => {}} colors={colors} />
+            <StatusManagementModal isOpen={isStatusModalOpen} onRequestClose={() => setIsStatusModalOpen(false)} statusColumns={kanbanColumns} onSave={handleSaveStatusColumns} onDelete={handleDeleteStatusColumn} colors={colors} />
         </div>
     );
 }
-

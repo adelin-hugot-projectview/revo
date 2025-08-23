@@ -1,0 +1,124 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.checklist_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL,
+  name text NOT NULL,
+  tasks jsonb,
+  CONSTRAINT checklist_templates_pkey PRIMARY KEY (id),
+  CONSTRAINT checklist_templates_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+);
+CREATE TABLE public.clients (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL,
+  name text NOT NULL,
+  email text,
+  phone text,
+  address text,
+  CONSTRAINT clients_pkey PRIMARY KEY (id),
+  CONSTRAINT clients_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+);
+CREATE TABLE public.companies (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  siret text,
+  address text,
+  logo_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT companies_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.email_templates (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL,
+  name text NOT NULL,
+  subject text,
+  body text,
+  CONSTRAINT email_templates_pkey PRIMARY KEY (id),
+  CONSTRAINT email_templates_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+);
+CREATE TABLE public.kanban_columns (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL DEFAULT get_my_company_id(),
+  name text NOT NULL,
+  position smallint NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  color text,
+  CONSTRAINT kanban_columns_pkey PRIMARY KEY (id),
+  CONSTRAINT kanban_columns_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+);
+CREATE TABLE public.profiles (
+  id uuid NOT NULL,
+  company_id uuid NOT NULL,
+  full_name text,
+  avatar_url text,
+  role text CHECK (role = ANY (ARRAY['Administrateur'::text, 'Chef de chantier'::text, 'Employé'::text])),
+  team_id uuid,
+  CONSTRAINT profiles_pkey PRIMARY KEY (id),
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
+  CONSTRAINT profiles_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT profiles_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+);
+CREATE TABLE public.prospects (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL,
+  kanban_column_id uuid,
+  project_name text NOT NULL,
+  contact_name text,
+  phone text,
+  email text,
+  address text,
+  amount numeric,
+  description text,
+  priority integer,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT prospects_pkey PRIMARY KEY (id),
+  CONSTRAINT prospects_kanban_column_id_fkey FOREIGN KEY (kanban_column_id) REFERENCES public.kanban_columns(id),
+  CONSTRAINT prospects_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+);
+CREATE TABLE public.sites (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL,
+  client_id uuid NOT NULL,
+  team_id uuid,
+  name text NOT NULL,
+  date date NOT NULL,
+  start_time time without time zone,
+  end_time time without time zone,
+  address text,
+  lat double precision,
+  lng double precision,
+  priority integer,
+  amount numeric,
+  comments text,
+  checklist jsonb,
+  photos jsonb,
+  history jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  kanban_column_id uuid,
+  position integer,
+  CONSTRAINT sites_pkey PRIMARY KEY (id),
+  CONSTRAINT sites_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT fk_kanban_column FOREIGN KEY (kanban_column_id) REFERENCES public.kanban_columns(id),
+  CONSTRAINT sites_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id),
+  CONSTRAINT sites_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+);
+CREATE TABLE public.teams (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  company_id uuid NOT NULL,
+  name text NOT NULL,
+  CONSTRAINT teams_pkey PRIMARY KEY (id),
+  CONSTRAINT teams_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+);
+CREATE TABLE public.todos (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  company_id uuid NOT NULL,
+  task text NOT NULL,
+  is_complete boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now(),
+  completed_at date,
+  CONSTRAINT todos_pkey PRIMARY KEY (id),
+  CONSTRAINT todos_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT todos_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);

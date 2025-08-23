@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import CalendarSiteCard from '../components/details/CalendarSiteCard.jsx';
 
 // --- COMPOSANT : Menu déroulant personnalisé ---
 const CustomSelect = ({ options, selected, onSelect, colors }) => {
@@ -23,7 +24,7 @@ const CustomSelect = ({ options, selected, onSelect, colors }) => {
                 <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border z-20 w-40">
                     <ul className="p-1">
                         {options.map(option => (
-                            <li key={option} onClick={() => handleSelect(option)} className={`p-2 text-sm rounded-md cursor-pointer hover:bg-gray-100 ${selected === option ? `font-bold text-[${colors.primary}]` : ''}`}>{option}</li>
+                            <li key={option} onClick={() => handleSelect(option)} className={`p-2 text-sm rounded-md cursor-pointer hover:bg-gray-100 ${selected === option ? 'font-bold text-primary' : ''}`}>{option}</li>
                         ))}
                     </ul>
                 </div>
@@ -46,15 +47,15 @@ const MonthCalendar = ({ year, month, sites, colors, onDayClick }) => {
         const eventsOnDay = sites.filter(s => new Date(s.date).toDateString() === dayStr);
         const uniqueStatuses = [...new Set(eventsOnDay.map(e => e.status))];
         let dayClasses = "text-center text-xs p-1 rounded-full w-6 h-6 flex items-center justify-center transition-colors";
-        if (isToday) { dayClasses += ` bg-[${colors.primary}] text-white`; }
+        if (isToday) { dayClasses += ' bg-primary text-white'; }
         else { dayClasses += ' hover:bg-gray-100'; }
         days.push(
             <div key={day} className="flex flex-col items-center cursor-pointer h-8" onClick={() => onDayClick(day)}>
                 <div className={dayClasses}>{day.getDate()}</div>
                 <div className="flex space-x-1 mt-1 h-1">
                     {uniqueStatuses.slice(0, 3).map(status => {
-                        const statusColors = { 'Terminé': colors.primary, 'En cours': colors.success, 'À venir': colors.accent, 'Annulé': colors.danger, 'Problème': colors.danger, };
-                        return <div key={status} className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusColors[status] || colors.neutralDark }}></div>;
+                        const statusColors = { 'Terminé': 'bg-primary', 'En cours': 'bg-success', 'À venir': 'bg-accent', 'Annulé': 'bg-danger', 'Problème': 'bg-danger' };
+                        return <div key={status} className={`w-1.5 h-1.5 rounded-full ${statusColors[status] || 'bg-neutralDark'}`}></div>;
                     })}
                 </div>
             </div>
@@ -77,7 +78,7 @@ const MultiMonthView = ({ year, months, sites, colors, onDayClick }) => (
 );
 
 // --- VUE : Mois ---
-const MonthView = ({ currentDate, sites, colors, onDayClick }) => {
+const MonthView = ({ currentDate, sites, colors, onSiteClick }) => {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const days = [];
     const monthStartDay = (date.getDay() + 6) % 7;
@@ -86,10 +87,10 @@ const MonthView = ({ currentDate, sites, colors, onDayClick }) => {
         const day = new Date(date);
         const eventsOnDay = sites.filter(s => new Date(s.date).toDateString() === day.toDateString());
         days.push(
-            <div key={day} onClick={() => onDayClick(day)} className="border-r border-b p-2 min-h-[120px] cursor-pointer hover:bg-gray-50">
+            <div key={day} className="border-r border-b p-2 min-h-[120px] cursor-pointer hover:bg-gray-50">
                 <p className="font-semibold">{day.getDate()}</p>
                 <ul className="text-xs mt-1 space-y-1">
-                    {eventsOnDay.map(event => <li key={event.id} className="p-1 bg-gray-100 rounded truncate">{event.name}</li>)}
+                    {eventsOnDay.map(event => <CalendarSiteCard key={event.id} site={event} onSiteClick={onSiteClick} colors={colors} />)}
                 </ul>
             </div>
         );
@@ -131,10 +132,9 @@ const TimeView = ({ days, sites, colors, onSiteClick }) => {
                                  .map(event => {
                                     const top = timeToMinutes(event.startTime) - (8 * 60);
                                     const height = timeToMinutes(event.endTime) - timeToMinutes(event.startTime);
-                                    const style = { backgroundColor: event.type === 'success' ? colors.secondary : '#FFFBEB', borderColor: event.type === 'success' ? colors.primary : colors.accent };
                                     return (
-                                        <div key={event.id} onClick={() => onSiteClick(event)} style={{ position: 'absolute', top: `${top}px`, height: `${height}px`, width: 'calc(100% - 8px)', left: '4px' }} className="p-2 rounded-lg border-l-4 overflow-hidden cursor-pointer">
-                                            <p className="font-semibold text-xs text-gray-800">{event.name}</p><p className="text-xs text-gray-500">{event.client}</p>
+                                        <div key={event.id} style={{ position: 'absolute', top: `${top}px`, height: `${height}px`, width: 'calc(100% - 8px)', left: '4px' }} className="p-1 rounded-lg overflow-hidden cursor-pointer">
+                                            <CalendarSiteCard site={event} onSiteClick={onSiteClick} colors={colors} />
                                         </div>
                                     );
                             })}
@@ -192,7 +192,7 @@ const CalendarPage = ({ sites, colors, onSiteClick }) => {
                 const startMonthQuarter = Math.floor(month / 3) * 3;
                 return <MultiMonthView year={year} months={Array.from({length: 3}, (_, i) => startMonthQuarter + i)} sites={sites} colors={colors} onDayClick={handleDayClick} />;
             case 'Mois':
-                return <MonthView currentDate={currentDate} sites={sites} colors={colors} onDayClick={handleDayClick} />;
+                return <MonthView currentDate={currentDate} sites={sites} colors={colors} onSiteClick={onSiteClick} />;
             case 'Semaine':
                  return <TimeView days={getWeekDays(currentDate)} sites={sites} colors={colors} onSiteClick={onSiteClick} />;
             case 'Jour':
@@ -217,7 +217,7 @@ const CalendarPage = ({ sites, colors, onSiteClick }) => {
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-[${colors.neutralDark}] font-['Poppins']">Calendrier</h1>
+                <h1 className="text-3xl font-bold" style={{color: colors.neutralDark, fontFamily: "'Poppins', sans-serif"}}>Calendrier</h1>
                 <div className="flex items-center gap-4">
                      <div className="flex items-center gap-2">
                          <button onClick={handlePrev} className="p-2 rounded-md hover:bg-gray-100"><ChevronLeft/></button>
@@ -235,3 +235,4 @@ const CalendarPage = ({ sites, colors, onSiteClick }) => {
 };
 
 export default CalendarPage;
+

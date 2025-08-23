@@ -77,7 +77,7 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#E1F2EC]">
       <div className="bg-white p-10 rounded-xl shadow-lg max-w-md w-full">
-        <img src={logo} alt="Logo Zuno" className="mx-auto mb-6 w-24 h-24" />
+        <img src={logo} alt="Logo REVO" className="mx-auto mb-6 w-24 h-24" />
         <h1 className="text-2xl font-bold text-[#2B5F4C] text-center mb-4">Créer un compte</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input

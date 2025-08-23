@@ -65,9 +65,9 @@ const DateRangePicker = ({ onDateChange, colors }) => {
 
             let classes = "text-center p-2 rounded-full cursor-pointer text-sm transition-colors";
             if (isSelectedStart || isSelectedEnd) {
-                classes += ` bg-[${colors.primary}] text-white`;
+                classes += ' bg-primary text-white';
             } else if (isInRange) {
-                classes += ` bg-[${colors.secondary}]`;
+                classes += ' bg-secondary';
             } else if (isToday) {
                  classes += ` border border-gray-300`;
             } else {
@@ -92,7 +92,7 @@ const DateRangePicker = ({ onDateChange, colors }) => {
                     {renderHeader()}
                     {renderDays()}
                     <div className="p-2 border-t flex justify-end">
-                        <button onClick={confirmSelection} className="px-4 py-1 text-white text-sm rounded-lg" style={{backgroundColor: colors.primary}}>Confirmer</button>
+                        <button onClick={confirmSelection} className="px-4 py-1 text-white text-sm rounded-lg bg-primary">Confirmer</button>
                     </div>
                 </div>
             )}

@@ -1,58 +1,84 @@
 import React from 'react';
-import { Calendar, Map, Briefcase, Users, Building, User, ChevronLeft, CalendarDays, ClipboardList } from 'lucide-react'; // Ajout de ClipboardList
+import { 
+    LayoutDashboard, 
+    ClipboardList,
+    Columns, // NOUVELLE ICÔNE
+    Calendar, 
+    Map, 
+    List, 
+    Users, 
+    FileText, 
+    Settings, 
+    User, 
+    LogOut, 
+    ChevronLeft, 
+    ChevronRight,
+    CreditCard // Nouvelle icône pour le paiement
+} from 'lucide-react';
 
-// Le composant NavItem est maintenant local au fichier Sidebar
-const NavItem = ({ icon: Icon, label, active, onClick, isSidebarOpen, colors }) => (
-    <li
-        className={`flex items-center p-3 my-1 rounded-lg cursor-pointer transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'} ${
-            active 
-            ? `bg-[${colors.primary}] text-white` 
-            : `text-[${colors.neutralDark}] hover:bg-[${colors.secondary}]`
-        }`}
-        onClick={onClick}
-    >
-        <Icon size={20} className={active ? 'text-white' : `text-[${colors.primary}]`} />
-        <span className={`ml-4 whitespace-nowrap ${isSidebarOpen ? 'inline-block' : 'hidden'}`}>{label}</span>
-    </li>
-);
+const Sidebar = ({ activePage, navigateTo, isSidebarOpen, setIsSidebarOpen, colors, onLogout, currentUserRole = null }) => {
+    // Les noms définis ici sont la "source de vérité" pour la navigation
+    // et doivent correspondre aux 'case' dans App.jsx
+    const navItems = [
+        { name: 'Dashboard', icon: LayoutDashboard },
+        { name: 'Chantiers', icon: List },
+        { name: 'Kanban', icon: Columns }, // NOUVEL ITEM DE MENU
+        { name: 'Calendrier', icon: Calendar },
+        { name: 'Carte', icon: Map },
+        { name: 'Clients', icon: Users },
+        { name: 'Templates', icon: FileText },
+    ];
+    
+    const settingsItems = [
+        { name: 'Société', icon: Settings },
+        { name: 'Abonnement', icon: CreditCard, adminOnly: true },
+        { name: 'Mon Profil', icon: User },
+    ];
 
-// Le composant Sidebar est maintenant exporté par défaut
-const Sidebar = ({ activePage, navigateTo, isSidebarOpen, setIsSidebarOpen, colors }) => {
+    const NavButton = ({ item }) => (
+        <button
+            onClick={() => navigateTo(item.name)}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                activePage === item.name
+                    ? `bg-green-100 text-green-800`
+                    : `text-gray-600 hover:bg-gray-100`
+            }`}
+        >
+            <item.icon size={20} />
+            {isSidebarOpen && <span>{item.name}</span>}
+        </button>
+    );
+
     return (
-        <div className={`relative flex flex-col h-screen bg-[${colors.neutralLight}] border-r border-gray-200 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
-            <div className={`flex items-center p-4 border-b border-gray-200 h-[69px] ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}>
-                <div className={`flex items-center`}>
-                    <div className={`w-8 h-8 bg-[${colors.primary}] rounded-md flex-shrink-0`}></div>
-                    <h1 className={`ml-3 text-2xl font-bold font-['Poppins'] text-[${colors.neutralDark}] transition-opacity duration-300 whitespace-nowrap ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>Zuno</h1>
-                </div>
+        <div className={`hidden md:flex flex-col h-full bg-white border-r border-gray-200 p-4 transition-all duration-300 ${isSidebarOpen ? 'w-72' : 'w-20'}`}>
+            <div className="flex items-center justify-between mb-8">
+                {isSidebarOpen && (
+                    <div className="flex items-center gap-2">
+                        {/* Vous pouvez personnaliser votre logo ici */}
+                        <div className="w-8 h-8 bg-green-700 rounded-md"></div>
+                        <h1 className="text-xl font-bold font-['Poppins'] text-gray-800">REVO</h1>
+                    </div>
+                )}
+                <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 rounded-lg hover:bg-gray-100">
+                    {isSidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+                </button>
             </div>
             
-            <nav className="flex-1 px-4 py-4 overflow-y-auto">
-                <ul>
-                    <NavItem icon={Calendar} label="Dashboard" active={activePage === 'Dashboard'} onClick={() => navigateTo('Dashboard')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                    <NavItem icon={CalendarDays} label="Calendrier" active={activePage === 'Calendar'} onClick={() => navigateTo('Calendar')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                    <NavItem icon={Map} label="Carte des chantiers" active={activePage === 'Map'} onClick={() => navigateTo('Map')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                    <NavItem icon={Briefcase} label="Liste des chantiers" active={activePage === 'Sites'} onClick={() => navigateTo('Sites')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                    <NavItem icon={Users} label="Clients" active={activePage === 'Clients'} onClick={() => navigateTo('Clients')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                    <NavItem icon={ClipboardList} label="Templates" active={activePage === 'Templates'} onClick={() => navigateTo('Templates')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                </ul>
+            <nav className="flex-grow space-y-2">
+                {navItems.map(item => <NavButton key={item.name} item={item} />)}
             </nav>
             
-            <div className="px-4 py-4 border-t border-gray-200">
-                 <ul>
-                    <NavItem icon={Building} label="Ma société" active={activePage === 'Company'} onClick={() => navigateTo('Company')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                    <NavItem icon={Users} label="Personnel" active={activePage === 'Staff'} onClick={() => navigateTo('Staff')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                    <NavItem icon={User} label="Profil" active={activePage === 'Profile'} onClick={() => navigateTo('Profile')} isSidebarOpen={isSidebarOpen} colors={colors} />
-                </ul>
+            <div className="space-y-2">
+                {settingsItems.map(item => (
+                    (!item.adminOnly || currentUserRole === 'Administrateur') && (
+                        <NavButton key={item.name} item={item} />
+                    )
+                ))}
+                <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-semibold text-white" style={{ backgroundColor: colors.danger }}>
+                    <LogOut size={20} />
+                    {isSidebarOpen && <span>Déconnexion</span>}
+                </button>
             </div>
-            
-            <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="absolute top-1/2 -right-4 transform -translate-y-1/2 p-2 rounded-full bg-white border border-gray-300 shadow-lg hover:bg-gray-100 transition-colors focus:outline-none z-10"
-                aria-label={isSidebarOpen ? "Réduire le menu" : "Agrandir le menu"}
-            >
-                <ChevronLeft size={20} className={`transition-transform duration-300 ${isSidebarOpen ? '' : 'rotate-180'}`} />
-            </button>
         </div>
     );
 };
