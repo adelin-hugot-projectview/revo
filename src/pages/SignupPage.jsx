@@ -38,39 +38,32 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
         }
 
         try {
-            console.log('🔄 Début de la création utilisateur...');
-            
-            // Test avec confirmation email désactivée pour éviter les triggers problématiques
+            // Créer le compte utilisateur avec les métadonnées nécessaires
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: email,
                 password: password,
                 options: {
-                    emailRedirectTo: undefined, // Pas de redirection
-                    data: {} // Métadonnées vides pour éviter les triggers
+                    data: {
+                        full_name: name,
+                        company_name: companyName,
+                        email: email
+                    }
                 }
             });
 
-            console.log('📝 Réponse auth.signUp:', { authData, authError });
-
             if (authError) {
-                console.error('❌ Erreur auth.signUp:', authError);
                 throw authError;
             }
 
             if (authData.user) {
-                console.log('✅ Utilisateur créé avec succès:', authData.user.id);
-                setSuccessMessage(`Compte créé avec succès ! Utilisateur ID: ${authData.user.id}. Vérifiez votre email pour confirmer.`);
+                setSuccessMessage("Compte créé avec succès ! Veuillez vérifier votre boîte mail pour confirmer votre inscription.");
             } else {
-                console.warn('⚠️ Pas de données utilisateur retournées');
-                setSuccessMessage("Demande de création de compte envoyée ! Vérifiez votre email.");
+                setSuccessMessage("Demande de création de compte envoyée ! Vérifiez votre email pour confirmer.");
             }
 
-            // TEMPORAIREMENT: On ne fait RIEN d'autre pour isoler le problème
-            // Pas de création de profil, pas de société, rien d'autre
-
         } catch (error) {
-            console.error('💥 Erreur complète:', error);
-            setError(`Erreur: ${error.message || error.error_description || "Erreur inconnue"}`);
+            console.error('Erreur création utilisateur:', error);
+            setError(error.message || "Une erreur est survenue lors de la création du compte.");
         } finally {
             setLoading(false);
         }
