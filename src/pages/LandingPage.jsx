@@ -39,7 +39,12 @@ const LandingPage = ({ colors }) => {
         <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
             <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
                 <h1 className="text-3xl font-bold mb-6" style={{ color: colors.primary }}>Bienvenue sur REVO</h1>
-                <p className="text-gray-600 mb-8">Simplifiez la gestion de vos chantiers. Créez votre compte et invitez votre équipe.</p>
+                <p className="text-gray-600 mb-6">Simplifiez la gestion de vos chantiers. Commencez par créer votre compte administrateur pour votre société.</p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-800">
+                    <p className="font-medium mb-1">Processus en 2 étapes :</p>
+                    <p>1. Saisissez vos informations ci-dessous</p>
+                    <p>2. Créez votre mot de passe sur la page suivante</p>
+                </div>
 
                 <form onSubmit={handleCreateAccount} className="space-y-4">
                     <div>
@@ -49,7 +54,7 @@ const LandingPage = ({ colors }) => {
                             id="companyName"
                             value={companyName}
                             onChange={(e) => setCompanyName(e.target.value)}
-                            placeholder="Nom de votre société"
+                            placeholder="Ex: Entreprise Dubois BTP"
                             required
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
@@ -61,7 +66,7 @@ const LandingPage = ({ colors }) => {
                             id="adminEmail"
                             value={adminEmail}
                             onChange={(e) => setAdminEmail(e.target.value)}
-                            placeholder="Votre email (administrateur)"
+                            placeholder="votre.nom@entreprise.com"
                             required
                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         />
@@ -71,7 +76,7 @@ const LandingPage = ({ colors }) => {
                         disabled={isLoading}
                         className="w-full px-4 py-2 text-white font-semibold rounded-md transition-colors disabled:opacity-50 bg-primary"
                     >
-                        {isLoading ? 'Chargement...' : 'Créer mon compte'}
+                        {isLoading ? 'Redirection...' : 'Commencer l\'inscription'}
                     </button>
                 </form>
 
@@ -82,7 +87,7 @@ const LandingPage = ({ colors }) => {
                 )}
 
                 <p className="mt-6 text-gray-500 text-sm">
-                    Déjà un compte ? <a href="/login" className="font-semibold text-primary">Connectez-vous ici</a>
+                    Votre société existe déjà ? <a href="/login" className="font-semibold text-primary">Connectez-vous ici</a>
                 </p>
             </div>
         </div>
