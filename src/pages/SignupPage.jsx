@@ -40,10 +40,14 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
         try {
             console.log('🔄 Début de la création utilisateur...');
             
-            // Test ULTRA simplifié - juste l'authentification Supabase
+            // Test avec confirmation email désactivée pour éviter les triggers problématiques
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: email,
-                password: password
+                password: password,
+                options: {
+                    emailRedirectTo: undefined, // Pas de redirection
+                    data: {} // Métadonnées vides pour éviter les triggers
+                }
             });
 
             console.log('📝 Réponse auth.signUp:', { authData, authError });
