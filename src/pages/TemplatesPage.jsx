@@ -39,7 +39,7 @@ const ChecklistModal = ({ isOpen, onRequestClose, onSave, colors, editingTemplat
             contents: chatHistory,
             generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.7 }
         };
-        const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imphd2liemdtZXNyemdlaWJndnFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzNTcyMDYsImV4cCI6MjA2NjkzMzIwNn0.pAHPVqjb1R1BvmHj0j6kFRWVjqMtKJ5p1AlxqiNYi7g";
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
         try {
