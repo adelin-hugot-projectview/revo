@@ -38,25 +38,46 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
         }
 
         try {
-            // 1. D'abord créer le compte utilisateur
+            // 1. D'abord créer le compte utilisateur SANS métadonnées complexes
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: email,
-                password: password,
-                options: {
-                    data: {
-                        full_name: name,
-                        email: email,
-                        is_company_admin: true // Marquer comme admin de société
-                    }
-                }
+                password: password
             });
 
             if (authError) {
                 throw authError;
             }
 
-            // 2. Ensuite créer la société avec l'utilisateur authentifié
+            // 2. Attendre un peu que le profil soit créé par le trigger (si il existe)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // 3. Créer ou mettre à jour le profil explicitement
             if (authData.user) {
+                // D'abord vérifier si le profil existe
+                const { data: existingProfile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('id', authData.user.id)
+                    .single();
+
+                if (!existingProfile) {
+                    // Créer le profil s'il n'existe pas
+                    const { error: createProfileError } = await supabase
+                        .from('profiles')
+                        .insert([{
+                            id: authData.user.id,
+                            full_name: name,
+                            email: email,
+                            role: 'admin'
+                        }]);
+
+                    if (createProfileError) {
+                        console.error('Erreur création profil:', createProfileError);
+                        throw new Error(`Impossible de créer le profil utilisateur: ${createProfileError.message}`);
+                    }
+                }
+
+                // 4. Créer la société
                 const { data: companyData, error: companyError } = await supabase
                     .from('companies')
                     .insert([{ 
@@ -69,23 +90,21 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
 
                 if (companyError) {
                     console.error('Erreur création société:', companyError);
-                    // Si la création de société échoue, on continue quand même
-                    // L'utilisateur pourra créer la société plus tard
+                    throw new Error(`Impossible de créer la société: ${companyError.message}`);
                 }
 
-                // 3. Mettre à jour le profil utilisateur avec company_id
-                if (companyData) {
-                    const { error: profileError } = await supabase
-                        .from('profiles')
-                        .update({ 
-                            company_id: companyData.id,
-                            role: 'admin'
-                        })
-                        .eq('id', authData.user.id);
+                // 5. Mettre à jour le profil avec company_id
+                const { error: updateProfileError } = await supabase
+                    .from('profiles')
+                    .update({ 
+                        company_id: companyData.id,
+                        role: 'admin'
+                    })
+                    .eq('id', authData.user.id);
 
-                    if (profileError) {
-                        console.error('Erreur mise à jour profil:', profileError);
-                    }
+                if (updateProfileError) {
+                    console.error('Erreur mise à jour profil:', updateProfileError);
+                    throw new Error(`Impossible de lier l'utilisateur à la société: ${updateProfileError.message}`);
                 }
             }
 
