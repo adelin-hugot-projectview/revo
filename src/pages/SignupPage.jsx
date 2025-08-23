@@ -35,7 +35,6 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
     if (!err) return 'Une erreur inconnue est survenue.';
     const msg = err.message || String(err);
 
-    // Quelques cas fréquents – adapte au besoin
     if (/User already registered|already exists/i.test(msg)) {
       return "Un compte existe déjà avec cet e-mail. Essayez de vous connecter.";
     }
@@ -94,6 +93,12 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
 
       if (authError) {
         throw authError;
+      }
+
+      // Si la session existe immédiatement (email confirm OFF), on déclenche la création de la company
+      if (authData?.session?.user) {
+        const { error: rpcError } = await supabase.rpc('create_my_company');
+        if (rpcError) console.error('RPC create_my_company error (signup immediate):', rpcError);
       }
 
       if (authData?.user) {
