@@ -192,6 +192,13 @@ export default function App() {
 
     const handleSaveClient = async (clientData) => {
         try {
+            console.log('🏢 CompanyInfo:', companyInfo);
+            console.log('📝 ClientData:', clientData);
+            
+            if (!companyInfo?.id) {
+                throw new Error('Aucune société associée. Veuillez vous reconnecter.');
+            }
+
             const { data, error } = await supabase
                 .from('clients')
                 .insert([{
@@ -199,7 +206,7 @@ export default function App() {
                     email: clientData.email,
                     phone: clientData.phone,
                     address: clientData.address,
-                    company_id: companyInfo?.id
+                    company_id: companyInfo.id
                 }])
                 .select()
                 .single();
@@ -209,6 +216,8 @@ export default function App() {
                 throw error;
             }
 
+            console.log('✅ Client créé:', data);
+            
             // Ajouter le nouveau client à la liste locale
             setClients(prevClients => [...prevClients, data]);
             
