@@ -390,7 +390,7 @@ export default function App() {
     const isPanelOpen = !!(selectedSite || selectedClient);
     
     const renderActivePage = () => {
-        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanColumns, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalModal(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
+        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanColumns, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalOpen(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
         switch (activePage) {
             case 'Dashboard': return <Dashboard {...pageProps} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} onAddTodo={handleAddTodo} onToggleTodo={handleToggleTodo} onDeleteTodo={handleDeleteTodo} />;
             case 'Chantiers': return <SitesListPage {...pageProps} />;
@@ -440,7 +440,7 @@ export default function App() {
                 </main>
             </div>
             <SidePanel header={panelHeader} isOpen={isPanelOpen} onClose={handleClosePanel} colors={colors} widthClass={panelWidthClass}> {panelContent} </SidePanel>
-            <SiteCreationModal isOpen={isSiteModalOpen} onRequestClose={() => setIsSiteModalOpen(false)} clients={clients} teams={teams} onSave={handleUpdateSite} colors={colors} checklistTemplates={checklistTemplates} availableStatuses={kanbanColumns} />
+            <SiteCreationModal isOpen={isSiteModalOpen} onRequestClose={() => setIsSiteModalOpen(false)} clients={clients} teams={teams} onSave={handleUpdateSite} colors={colors} checklistTemplates={checklistTemplates} availableStatuses={kanbanColumns} onAddClient={() => setIsClientModalOpen(true)} />
             <ClientCreationModal isOpen={isClientModalOpen} onRequestClose={() => setIsClientModalOpen(false)} onSave={() => {}} colors={colors} />
             <StatusManagementModal isOpen={isStatusModalOpen} onRequestClose={() => setIsStatusModalOpen(false)} statusColumns={kanbanColumns} onSave={handleSaveStatusColumns} onDelete={handleDeleteStatusColumn} colors={colors} />
         </div>

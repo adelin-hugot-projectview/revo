@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
-import { X, ClipboardList } from 'lucide-react';
+import { X, ClipboardList, Plus } from 'lucide-react';
 
-const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, checklistTemplates, colors }) => {
+const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, checklistTemplates, colors, onAddClient }) => {
     // On s'assure que tous les champs sont présents dans l'état initial
     const initialFormState = {
         name: '',
@@ -82,10 +82,21 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
                     </div>
                     <div>
                         <label htmlFor="client_id" className="block text-sm font-medium text-gray-700">Client</label>
-                        <select name="client_id" id="client_id" value={formData.client_id} onChange={handleClientChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                            <option value="">Sélectionner un client</option>
-                            {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
-                        </select>
+                        <div className="mt-1 flex gap-2">
+                            <select name="client_id" id="client_id" value={formData.client_id} onChange={handleClientChange} required className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary">
+                                <option value="">Sélectionner un client</option>
+                                {clients.map(client => <option key={client.id} value={client.id}>{client.name}</option>)}
+                            </select>
+                            <button
+                                type="button"
+                                onClick={onAddClient}
+                                className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors border border-gray-300"
+                                title="Créer un nouveau client"
+                            >
+                                <Plus size={16} />
+                                <span className="hidden sm:inline">Client</span>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label htmlFor="address" className="block text-sm font-medium text-gray-700">Adresse du chantier</label>
