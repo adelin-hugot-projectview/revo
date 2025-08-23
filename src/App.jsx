@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu } from 'lucide-react';
 import { supabase } from './supabaseClient';
 
@@ -11,7 +11,6 @@ import SiteCreationModal from './components/SiteCreationModal.jsx';
 import ClientCreationModal from './components/ClientCreationModal.jsx';
 import StatusBadge from './components/details/StatusBadge.jsx';
 import StatusManagementModal from './components/StatusManagementModal.jsx';
-
 
 import Dashboard from './pages/Dashboard.jsx';
 import CalendarPage from './pages/CalendarPage.jsx';
@@ -48,17 +47,31 @@ export default function App() {
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [newTodoText, setNewTodoText] = useState('');
     const [kanbanColumns, setKanbanColumns] = useState([]); // Utilisé comme "statuts"
-    const [currentUserRole, setCurrentUserRole] = useState(null); // AJOUT : État pour le rôle de l'utilisateur actuel
+    const [currentUserRole, setCurrentUserRole] = useState(null); // rôle de l'utilisateur
+
+    // Empêche de rappeler le RPC plusieurs fois pour la même session
+    const rpcCalledRef = useRef(false);
 
     const colors = { primary: '#2B5F4C', secondary: '#E1F2EC', accent: '#FFBB33', neutralDark: '#222222', neutralLight: '#F8F9FA', danger: '#E74C3C', success: '#2ECC71' };
 
     // --- GESTION DE LA SESSION SUPABASE ---
     useEffect(() => {
         setAppLoading(true);
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
         });
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setSession(session); });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            setSession(session);
+            // Au premier SIGNED_IN, garantir la création/liaison company côté DB
+            if (event === 'SIGNED_IN' && session?.user?.id && !rpcCalledRef.current) {
+                rpcCalledRef.current = true;
+                const { error } = await supabase.rpc('create_my_company');
+                if (error) console.error('RPC create_my_company error (onAuthStateChange):', error);
+            }
+        });
+
         return () => subscription.unsubscribe();
     }, []);
 
@@ -77,7 +90,7 @@ export default function App() {
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
                 if (userError) throw userError;
 
-                const { data: profile, error: profileError } = await supabase
+                let { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('company_id, role')
                     .eq('id', user.id)
@@ -88,10 +101,27 @@ export default function App() {
                     throw new Error('Impossible de charger le profil utilisateur');
                 }
 
-                const companyId = profile?.company_id;
+                let companyId = profile?.company_id;
+
+                // Filet de sécurité : si pas de company_id, on appelle le RPC puis on re-fetch le profil
                 if (!companyId) {
-                    console.error('Aucune société associée à cet utilisateur');
-                    throw new Error('Aucune société associée à cet utilisateur');
+                    console.warn('Aucune société associée — tentative de création via RPC create_my_company');
+                    if (!rpcCalledRef.current) {
+                        rpcCalledRef.current = true;
+                        const { error: rpcError } = await supabase.rpc('create_my_company');
+                        if (rpcError) console.error('RPC create_my_company error (fetchData):', rpcError);
+                    }
+                    const retry = await supabase
+                        .from('profiles')
+                        .select('company_id, role')
+                        .eq('id', user.id)
+                        .single();
+                    if (!retry.error && retry.data?.company_id) {
+                        profile = retry.data;
+                        companyId = retry.data.company_id;
+                    } else {
+                        throw new Error('Aucune société associée à cet utilisateur (après tentative de bootstrap).');
+                    }
                 }
 
                 // Ensuite, charger les données en utilisant company_id
@@ -113,7 +143,6 @@ export default function App() {
                     supabase.from('todos').select('*, site_id').eq('user_id', session.user.id)
                 ]);
 
-                // Gestion d'erreur améliorée avec des messages spécifiques
                 if (companyRes.error) {
                     console.error('Erreur (société):', companyRes.error.message);
                     throw new Error(`Impossible de charger les informations de la société: ${companyRes.error.message}`);
@@ -178,8 +207,6 @@ export default function App() {
 
             } catch (error) {
                 console.error('Erreur lors du chargement des données:', error.message);
-                // Optionnel: afficher un message d'erreur à l'utilisateur
-                // setErrorMessage(error.message);
             } finally {
                 setAppLoading(false);
             }
@@ -197,7 +224,6 @@ export default function App() {
             
             let currentCompanyId = companyInfo?.id;
             
-            // Si pas de companyInfo, essayer de récupérer depuis le profil utilisateur
             if (!currentCompanyId) {
                 console.log('🔍 Récupération company_id depuis le profil...');
                 const { data: { user } } = await supabase.auth.getUser();
@@ -241,7 +267,6 @@ export default function App() {
 
             console.log('✅ Client créé:', data);
             
-            // Ajouter le nouveau client à la liste locale
             setClients(prevClients => [...prevClients, data]);
             
             return data;
@@ -250,7 +275,6 @@ export default function App() {
             throw error;
         }
     };
-
 
     const handleUpdateSite = async (siteId, updates) => {
         const originalSites = [...sites];
@@ -312,7 +336,6 @@ export default function App() {
     const handleUpdateSiteOrder = async (updatedSitesData) => {
         if (updatedSitesData.length === 0) return;
 
-        // Utiliser Promise.all pour envoyer toutes les mises à jour concurremment
         const updatePromises = updatedSitesData.map(async (updatedSite) => {
             const { error } = await supabase
                 .from('sites')
@@ -331,7 +354,6 @@ export default function App() {
 
         await Promise.all(updatePromises);
 
-        // Re-fetch sites to ensure correct order and data consistency after all updates are done
         const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('*, client:clients(name), team:teams(id, name), status:kanban_columns(id, name, color, position)').order('position', { ascending: true });
         if (sitesError) {
             console.error('Erreur (re-fetch chantiers):', sitesError.message);
@@ -369,7 +391,6 @@ export default function App() {
     };
 
     const handleDeleteStatusColumn = async (statusId) => {
-        // Vérifier si le statut est utilisé
         const sitesWithStatus = sites.filter(s => s.status?.id === statusId);
         if (sitesWithStatus.length > 0) {
             alert('Ce statut est utilisé par des chantiers et ne peut pas être supprimé.');
@@ -442,9 +463,8 @@ export default function App() {
                 default: return <LandingPage colors={colors} />;
             }
         } else {
-            // If no session and not on a public path, redirect to landing
             window.location.href = '/';
-            return null; // Or a loading spinner
+            return null;
         }
     }
 
@@ -453,7 +473,7 @@ export default function App() {
     const renderActivePage = () => {
         const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanColumns, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalOpen(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
         switch (activePage) {
-            case 'Dashboard': return <Dashboard {...pageProps} todos={todos} newTodoText={newTodoText} setNewTodoText={setNewTodoText} onAddTodo={handleAddTodo} onToggleTodo={handleToggleTodo} onDeleteTodo={handleDeleteTodo} />;
+            case 'Dashboard': return <Dashboard {...pageProps} todos={todos} newTodoText={setNewTodoText ? newTodoText : ''} setNewTodoText={setNewTodoText} onAddTodo={handleAddTodo} onToggleTodo={handleToggleTodo} onDeleteTodo={handleDeleteTodo} />;
             case 'Chantiers': return <SitesListPage {...pageProps} />;
             case 'Kanban': 
                 return <SitesKanbanPage {...pageProps} />;
@@ -461,7 +481,6 @@ export default function App() {
             case 'Carte': return <MapPage {...pageProps} />;
             case 'Clients': return <ClientsPage {...pageProps} />;
             case 'Templates': return <TemplatesPage colors={colors} />;
-
             case 'Société': return <CompanyPage companyInfo={companyInfo} setCompanyInfo={setCompanyInfo} colors={colors} currentUserRole={currentUserRole} />;
             case 'Abonnement': return <SubscriptionPage companyInfo={companyInfo} colors={colors} currentUserRole={currentUserRole} />;
             case 'Mon Profil': return <ProfilePage colors={colors} currentUser={session.user} />;
@@ -500,7 +519,7 @@ export default function App() {
                     {renderActivePage()}
                 </main>
             </div>
-            <SidePanel header={panelHeader} isOpen={isPanelOpen} onClose={handleClosePanel} colors={colors} widthClass={panelWidthClass}> {panelContent} </SidePanel>
+            <SidePanel header={panelHeader} isOpen={!!(selectedSite || selectedClient)} onClose={handleClosePanel} colors={colors} widthClass={panelWidthClass}> {panelContent} </SidePanel>
             <SiteCreationModal isOpen={isSiteModalOpen} onRequestClose={() => setIsSiteModalOpen(false)} clients={clients} teams={teams} onSave={handleUpdateSite} colors={colors} checklistTemplates={checklistTemplates} availableStatuses={kanbanColumns} onAddClient={() => setIsClientModalOpen(true)} />
             <ClientCreationModal isOpen={isClientModalOpen} onRequestClose={() => setIsClientModalOpen(false)} onSave={handleSaveClient} colors={colors} />
             <StatusManagementModal isOpen={isStatusModalOpen} onRequestClose={() => setIsStatusModalOpen(false)} statusColumns={kanbanColumns} onSave={handleSaveStatusColumns} onDelete={handleDeleteStatusColumn} colors={colors} />
