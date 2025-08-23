@@ -29,7 +29,7 @@ const ClientCreationModal = ({ isOpen, onRequestClose, onSave, colors }) => {
     }
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4" style={{ zIndex: 1100 }}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
                 <div className="flex justify-between items-center p-6 border-b">
                     <h2 className="text-2xl font-bold font-['Poppins'] text-gray-800">Nouveau Client</h2>
@@ -40,7 +40,7 @@ const ClientCreationModal = ({ isOpen, onRequestClose, onSave, colors }) => {
                 <form onSubmit={handleSubmit}>
                     <div className="p-8 space-y-6">
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nom complet ou nom de la société</label>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nom du client</label>
                             <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
