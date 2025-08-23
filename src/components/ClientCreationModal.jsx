@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 
 const ClientCreationModal = ({ isOpen, onRequestClose, onSave, colors }) => {
     const [formData, setFormData] = useState({
@@ -9,6 +9,8 @@ const ClientCreationModal = ({ isOpen, onRequestClose, onSave, colors }) => {
         address: ''
     });
     const [isSaving, setIsSaving] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [error, setError] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -18,10 +20,24 @@ const ClientCreationModal = ({ isOpen, onRequestClose, onSave, colors }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
-        await onSave(formData);
-        setIsSaving(false);
-        // Reset form for next time
-        setFormData({ name: '', email: '', phone: '', address: '' });
+        setError('');
+        
+        try {
+            await onSave(formData);
+            setIsSuccess(true);
+            
+            // Animation de succès puis fermeture
+            setTimeout(() => {
+                setIsSuccess(false);
+                setFormData({ name: '', email: '', phone: '', address: '' });
+                onRequestClose();
+            }, 1500);
+            
+        } catch (err) {
+            setError(err.message || 'Une erreur est survenue lors de la création du client');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (!isOpen) {
@@ -39,6 +55,20 @@ const ClientCreationModal = ({ isOpen, onRequestClose, onSave, colors }) => {
                 </div>
                 <form onSubmit={handleSubmit}>
                     <div className="p-8 space-y-6">
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <p className="text-red-800 text-sm">{error}</p>
+                            </div>
+                        )}
+                        
+                        {isSuccess && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center justify-center">
+                                <div className="flex items-center gap-2 text-green-800">
+                                    <Check size={20} className="animate-bounce" />
+                                    <span className="font-medium">Client créé avec succès !</span>
+                                </div>
+                            </div>
+                        )}
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700">Nom du client</label>
                             <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
@@ -59,11 +89,29 @@ const ClientCreationModal = ({ isOpen, onRequestClose, onSave, colors }) => {
                         </div>
                     </div>
                     <div className="flex justify-end items-center p-6 bg-gray-50 rounded-b-xl">
-                        <button type="button" onClick={onRequestClose} className="px-6 py-2 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors mr-4">
+                        <button 
+                            type="button" 
+                            onClick={onRequestClose} 
+                            disabled={isSaving || isSuccess}
+                            className="px-6 py-2 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors mr-4 disabled:opacity-50"
+                        >
                             Annuler
                         </button>
-                        <button type="submit" disabled={isSaving} className="px-6 py-2 text-white rounded-lg transition-colors disabled:opacity-50 bg-primary">
-                            {isSaving ? 'Enregistrement...' : 'Enregistrer le client'}
+                        <button 
+                            type="submit" 
+                            disabled={isSaving || isSuccess} 
+                            className="px-6 py-2 text-white rounded-lg transition-colors disabled:opacity-50 bg-primary flex items-center gap-2"
+                        >
+                            {isSuccess ? (
+                                <>
+                                    <Check size={16} className="animate-spin" />
+                                    Créé !
+                                </>
+                            ) : isSaving ? (
+                                'Enregistrement...'
+                            ) : (
+                                'Enregistrer le client'
+                            )}
                         </button>
                     </div>
                 </form>

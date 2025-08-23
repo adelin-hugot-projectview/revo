@@ -190,6 +190,35 @@ export default function App() {
     // --- FONCTIONS DE GESTION ---
     const handleLogout = async () => { await supabase.auth.signOut(); setActivePage('Dashboard'); };
 
+    const handleSaveClient = async (clientData) => {
+        try {
+            const { data, error } = await supabase
+                .from('clients')
+                .insert([{
+                    name: clientData.name,
+                    email: clientData.email,
+                    phone: clientData.phone,
+                    address: clientData.address,
+                    company_id: companyInfo?.id
+                }])
+                .select()
+                .single();
+
+            if (error) {
+                console.error('Erreur sauvegarde client:', error);
+                throw error;
+            }
+
+            // Ajouter le nouveau client à la liste locale
+            setClients(prevClients => [...prevClients, data]);
+            
+            return data;
+        } catch (error) {
+            console.error('Erreur lors de la création du client:', error);
+            throw error;
+        }
+    };
+
 
     const handleUpdateSite = async (siteId, updates) => {
         const originalSites = [...sites];
@@ -441,7 +470,7 @@ export default function App() {
             </div>
             <SidePanel header={panelHeader} isOpen={isPanelOpen} onClose={handleClosePanel} colors={colors} widthClass={panelWidthClass}> {panelContent} </SidePanel>
             <SiteCreationModal isOpen={isSiteModalOpen} onRequestClose={() => setIsSiteModalOpen(false)} clients={clients} teams={teams} onSave={handleUpdateSite} colors={colors} checklistTemplates={checklistTemplates} availableStatuses={kanbanColumns} onAddClient={() => setIsClientModalOpen(true)} />
-            <ClientCreationModal isOpen={isClientModalOpen} onRequestClose={() => setIsClientModalOpen(false)} onSave={() => {}} colors={colors} />
+            <ClientCreationModal isOpen={isClientModalOpen} onRequestClose={() => setIsClientModalOpen(false)} onSave={handleSaveClient} colors={colors} />
             <StatusManagementModal isOpen={isStatusModalOpen} onRequestClose={() => setIsStatusModalOpen(false)} statusColumns={kanbanColumns} onSave={handleSaveStatusColumns} onDelete={handleDeleteStatusColumn} colors={colors} />
         </div>
     );
