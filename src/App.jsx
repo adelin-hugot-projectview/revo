@@ -195,7 +195,30 @@ export default function App() {
             console.log('🏢 CompanyInfo:', companyInfo);
             console.log('📝 ClientData:', clientData);
             
-            if (!companyInfo?.id) {
+            let currentCompanyId = companyInfo?.id;
+            
+            // Si pas de companyInfo, essayer de récupérer depuis le profil utilisateur
+            if (!currentCompanyId) {
+                console.log('🔍 Récupération company_id depuis le profil...');
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (user) {
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('company_id')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    if (profileError || !profile) {
+                        throw new Error('Aucun profil trouvé. Veuillez vous reconnecter ou contacter l\'administrateur.');
+                    }
+                    
+                    currentCompanyId = profile.company_id;
+                    console.log('🏢 Company ID récupéré:', currentCompanyId);
+                }
+            }
+            
+            if (!currentCompanyId) {
                 throw new Error('Aucune société associée. Veuillez vous reconnecter.');
             }
 
@@ -206,7 +229,7 @@ export default function App() {
                     email: clientData.email,
                     phone: clientData.phone,
                     address: clientData.address,
-                    company_id: companyInfo.id
+                    company_id: currentCompanyId
                 }])
                 .select()
                 .single();
