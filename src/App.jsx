@@ -27,26 +27,6 @@ import SignupPage from './pages/SignupPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 
 export default function App() {
-    // Gestionnaire d'erreur global
-    useEffect(() => {
-        const handleError = (event) => {
-            console.error('🚨 Erreur globale capturée:', event.error);
-            console.error('🚨 Stack trace:', event.error?.stack);
-        };
-        
-        const handleUnhandledRejection = (event) => {
-            console.error('🚨 Promise rejection non gérée:', event.reason);
-        };
-        
-        window.addEventListener('error', handleError);
-        window.addEventListener('unhandledrejection', handleUnhandledRejection);
-        
-        return () => {
-            window.removeEventListener('error', handleError);
-            window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-        };
-    }, []);
-
     // --- ÉTATS ---
     const [session, setSession] = useState(null);
     const [appLoading, setAppLoading] = useState(true);
@@ -99,21 +79,16 @@ export default function App() {
     useEffect(() => {
         if (!session) {
             setCompanyInfo(null); setSites([]); setClients([]); setTodos([]); setTeams([]); setChecklistTemplates([]); setKanbanColumns([]);
-            rpcCalledRef.current = false; // Reset RPC flag quand pas de session
             setAppLoading(false);
             return;
         }
         
-        let isCancelled = false; // Pour éviter les race conditions
-        
         const fetchData = async () => {
-            if (isCancelled) return;
             setAppLoading(true);
             try {
                 // D'abord, récupérer le profil utilisateur pour obtenir company_id
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
                 if (userError) throw userError;
-                if (isCancelled) return;
 
                 let { data: profile, error: profileError } = await supabase
                     .from('profiles')
@@ -125,20 +100,17 @@ export default function App() {
                     console.error('Erreur (profil utilisateur):', profileError.message);
                     throw new Error('Impossible de charger le profil utilisateur');
                 }
-                if (isCancelled) return;
 
                 let companyId = profile?.company_id;
 
                 // Filet de sécurité : si pas de company_id, on appelle le RPC puis on re-fetch le profil
                 if (!companyId) {
                     console.warn('Aucune société associée — tentative de création via RPC create_my_company');
-                    if (!rpcCalledRef.current && !isCancelled) {
+                    if (!rpcCalledRef.current) {
                         rpcCalledRef.current = true;
                         const { error: rpcError } = await supabase.rpc('create_my_company');
                         if (rpcError) console.error('RPC create_my_company error (fetchData):', rpcError);
                     }
-                    if (isCancelled) return;
-                    
                     const retry = await supabase
                         .from('profiles')
                         .select('company_id, role')
@@ -151,7 +123,6 @@ export default function App() {
                         throw new Error('Aucune société associée à cet utilisateur (après tentative de bootstrap).');
                     }
                 }
-                if (isCancelled) return;
 
                 // Ensuite, charger les données en utilisant company_id
                 const [
@@ -171,8 +142,6 @@ export default function App() {
                     supabase.from('checklist_templates').select('*').eq('company_id', companyId),
                     supabase.from('todos').select('*, site_id').eq('user_id', session.user.id)
                 ]);
-                
-                if (isCancelled) return;
 
                 if (companyRes.error) {
                     console.error('Erreur (société):', companyRes.error.message);
@@ -233,46 +202,16 @@ export default function App() {
                     console.error('Erreur (todos):', todosRes.error.message);
                     throw new Error(`Impossible de charger les tâches: ${todosRes.error.message}`);
                 } else {
-                    try {
-                        const mappedTodos = (todosRes.data || []).map(todo => ({ 
-                            id: todo.id, 
-                            text: todo.task, 
-                            done: todo.is_complete, 
-                            completed_at: todo.completed_at, 
-                            site_id: todo.site_id 
-                        }));
-                        setTodos(mappedTodos);
-                    } catch (mappingError) {
-                        console.error('Erreur mapping todos:', mappingError);
-                        console.error('Données todos brutes:', todosRes.data);
-                        setTodos([]);
-                    }
+                    setTodos(todosRes.data.map(todo => ({ id: todo.id, text: todo.task, done: todo.is_complete, completed_at: todo.completed_at, site_id: todo.site_id })));
                 }
 
             } catch (error) {
-                console.error('Erreur lors du chargement des données:', error);
-                console.error('Stack trace:', error.stack);
-                // S'assurer que les états sont réinitialisés même en cas d'erreur
-                setCompanyInfo(null);
-                setSites([]);
-                setClients([]);
-                setTodos([]);
-                setTeams([]);
-                setChecklistTemplates([]);
-                setKanbanColumns([]);
+                console.error('Erreur lors du chargement des données:', error.message);
             } finally {
-                if (!isCancelled) {
-                    setAppLoading(false);
-                }
+                setAppLoading(false);
             }
         };
-        
         fetchData();
-        
-        // Cleanup function pour éviter les race conditions
-        return () => {
-            isCancelled = true;
-        };
     }, [session]);
 
     // --- FONCTIONS DE GESTION ---
