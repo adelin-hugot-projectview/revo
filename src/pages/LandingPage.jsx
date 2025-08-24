@@ -99,19 +99,19 @@ const LandingPage = ({ colors }) => {
     ];
 
     return (
-        <div className="min-h-screen bg-black text-white overflow-hidden">
+        <div className="min-h-screen bg-gray-50 text-gray-900 overflow-hidden" style={{ backgroundColor: '#F8F9FA' }}>
             {/* Background Effects */}
             <div className="fixed inset-0 z-0">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-900/20 via-black to-blue-900/20" />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #E1F2EC 0%, #F8F9FA 50%, rgba(43, 95, 76, 0.05) 100%)' }} />
                 <motion.div 
                     className="absolute inset-0"
                     style={{
-                        background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(34, 197, 94, 0.15), transparent 80%)`
+                        background: `radial-gradient(600px at ${mousePosition.x}px ${mousePosition.y}px, rgba(43, 95, 76, 0.08), transparent 80%)`
                     }}
                 />
-                <div className="absolute inset-0 opacity-30">
-                    <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-green-500 rounded-full filter blur-3xl opacity-20 animate-pulse" />
-                    <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-blue-500 rounded-full filter blur-3xl opacity-20 animate-pulse delay-1000" />
+                <div className="absolute inset-0 opacity-40">
+                    <div className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full filter blur-3xl opacity-30 animate-pulse" style={{ backgroundColor: 'rgba(43, 95, 76, 0.1)' }} />
+                    <div className="absolute top-3/4 right-1/4 w-96 h-96 rounded-full filter blur-3xl opacity-20 animate-pulse delay-1000" style={{ backgroundColor: 'rgba(255, 187, 51, 0.1)' }} />
                 </div>
             </div>
 
@@ -119,7 +119,7 @@ const LandingPage = ({ colors }) => {
             <motion.nav 
                 initial={{ y: -100 }}
                 animate={{ y: 0 }}
-                className="relative z-50 bg-black/50 backdrop-blur-md border-b border-white/10 sticky top-0"
+                className="relative z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 shadow-sm"
             >
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center py-6">
@@ -128,7 +128,11 @@ const LandingPage = ({ colors }) => {
                             whileHover={{ scale: 1.05 }}
                         >
                             <img src="/logo.svg" alt="REVO" className="h-8 w-auto" />
-                            <span className="ml-3 text-2xl font-bold bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+                            <span className="ml-3 text-2xl font-bold" style={{ 
+                                background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)`, 
+                                WebkitBackgroundClip: 'text', 
+                                WebkitTextFillColor: 'transparent' 
+                            }}>
                                 REVO
                             </span>
                         </motion.div>
@@ -138,21 +142,21 @@ const LandingPage = ({ colors }) => {
                                 <motion.a 
                                     key={item}
                                     href={`#${item.toLowerCase()}`}
-                                    className="text-gray-300 hover:text-white transition-colors relative group"
+                                    className="text-gray-600 hover:text-gray-900 transition-colors relative group font-medium"
                                     whileHover={{ y: -2 }}
                                     initial={{ opacity: 0, y: -20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.1 * index }}
                                 >
                                     {item}
-                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-400 group-hover:w-full transition-all duration-300" />
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 group-hover:w-full transition-all duration-300" style={{ backgroundColor: '#2B5F4C' }} />
                                 </motion.a>
                             ))}
                         </div>
                         
                         <motion.a 
                             href="/login"
-                            className="px-6 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 transition-all duration-300 font-medium"
+                            className="px-6 py-2.5 rounded-full border border-gray-200 text-gray-700 hover:border-gray-300 hover:shadow-md transition-all duration-300 font-medium bg-white"
                             whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.95 }}
                         >
@@ -173,7 +177,12 @@ const LandingPage = ({ colors }) => {
                             className="mb-8"
                         >
                             <motion.span 
-                                className="inline-block px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium mb-6"
+                                className="inline-block px-4 py-2 rounded-full border text-sm font-medium mb-6"
+                                style={{ 
+                                    backgroundColor: 'rgba(43, 95, 76, 0.1)', 
+                                    borderColor: 'rgba(43, 95, 76, 0.3)', 
+                                    color: '#2B5F4C' 
+                                }}
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ delay: 0.2 }}
@@ -188,24 +197,29 @@ const LandingPage = ({ colors }) => {
                             initial={{ opacity: 0, y: 50 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 1, delay: 0.3 }}
+                            style={{ color: '#222222' }}
                         >
-                            <span className="block text-white">Gérez vos</span>
-                            <span className="block bg-gradient-to-r from-green-400 via-green-500 to-green-600 bg-clip-text text-transparent">
+                            <span className="block">Gérez vos</span>
+                            <span className="block" style={{ 
+                                background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)`, 
+                                WebkitBackgroundClip: 'text', 
+                                WebkitTextFillColor: 'transparent' 
+                            }}>
                                 chantiers
                             </span>
-                            <span className="block text-white/80 text-4xl md:text-5xl lg:text-6xl font-light">
+                            <span className="block text-gray-600 text-4xl md:text-5xl lg:text-6xl font-light">
                                 comme un pro
                             </span>
                         </motion.h1>
 
                         <motion.p 
-                            className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto font-light leading-relaxed"
+                            className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto font-light leading-relaxed"
                             initial={{ opacity: 0, y: 30 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.5 }}
                         >
                             La plateforme intelligente qui transforme votre gestion de chantiers. 
-                            <span className="text-green-400 font-medium"> Simple, puissante, moderne.</span>
+                            <span className="font-medium" style={{ color: '#2B5F4C' }}> Simple, puissante, moderne.</span>
                         </motion.p>
 
                         {/* CTA Form */}
@@ -215,7 +229,7 @@ const LandingPage = ({ colors }) => {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.6, delay: 0.7 }}
                         >
-                            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8">
+                            <div className="bg-white backdrop-blur-xl border border-gray-200 rounded-2xl p-8 shadow-xl">
                                 <form onSubmit={handleCreateAccount} className="space-y-4">
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <motion.input
@@ -223,7 +237,8 @@ const LandingPage = ({ colors }) => {
                                             value={companyName}
                                             onChange={(e) => setCompanyName(e.target.value)}
                                             placeholder="Nom de votre entreprise"
-                                            className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-green-400 focus:bg-white/15 transition-all"
+                                            className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+                                            style={{ focusRingColor: '#2B5F4C' }}
                                             required
                                             whileFocus={{ scale: 1.02 }}
                                         />
@@ -232,7 +247,8 @@ const LandingPage = ({ colors }) => {
                                             value={adminEmail}
                                             onChange={(e) => setAdminEmail(e.target.value)}
                                             placeholder="votre.email@entreprise.com"
-                                            className="w-full px-4 py-4 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-green-400 focus:bg-white/15 transition-all"
+                                            className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all"
+                                            style={{ focusRingColor: '#2B5F4C' }}
                                             required
                                             whileFocus={{ scale: 1.02 }}
                                         />
@@ -241,7 +257,11 @@ const LandingPage = ({ colors }) => {
                                     <motion.button
                                         type="submit"
                                         disabled={isLoading}
-                                        className="w-full py-4 px-8 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-300 disabled:opacity-50 flex items-center justify-center group text-lg"
+                                        className="w-full py-4 px-8 text-white font-semibold rounded-xl transition-all duration-300 disabled:opacity-50 flex items-center justify-center group text-lg shadow-lg"
+                                        style={{ 
+                                            background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)`,
+                                            '&:hover': { transform: 'translateY(-2px)' }
+                                        }}
                                         whileHover={{ scale: 1.02, y: -2 }}
                                         whileTap={{ scale: 0.98 }}
                                     >
@@ -258,7 +278,7 @@ const LandingPage = ({ colors }) => {
                                 
                                 {feedback && (
                                     <motion.p 
-                                        className={`mt-4 text-sm text-center ${feedback.includes('Erreur') ? 'text-red-400' : 'text-green-400'}`}
+                                        className={`mt-4 text-sm text-center ${feedback.includes('Erreur') ? 'text-red-500' : 'text-green-600'}`}
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                     >
@@ -266,7 +286,7 @@ const LandingPage = ({ colors }) => {
                                     </motion.p>
                                 )}
                                 
-                                <p className="text-sm text-gray-400 mt-4 text-center">
+                                <p className="text-sm text-gray-500 mt-4 text-center">
                                     ✨ 14 jours d'essai gratuit • 🚀 Configuration en 2 minutes • ❌ Aucun engagement
                                 </p>
                             </div>
@@ -274,21 +294,21 @@ const LandingPage = ({ colors }) => {
 
                         {/* Trust Badges */}
                         <motion.div 
-                            className="flex items-center justify-center space-x-8 text-gray-400"
+                            className="flex items-center justify-center space-x-8 text-gray-500"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6, delay: 0.9 }}
                         >
                             <div className="flex items-center space-x-2">
-                                <Shield className="w-5 h-5 text-green-400" />
+                                <Shield className="w-5 h-5" style={{ color: '#2B5F4C' }} />
                                 <span className="text-sm">Sécurisé</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <Zap className="w-5 h-5 text-green-400" />
+                                <Zap className="w-5 h-5" style={{ color: '#2B5F4C' }} />
                                 <span className="text-sm">Rapide</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <CheckCircle className="w-5 h-5 text-green-400" />
+                                <CheckCircle className="w-5 h-5" style={{ color: '#2B5F4C' }} />
                                 <span className="text-sm">Fiable</span>
                             </div>
                         </motion.div>
@@ -306,7 +326,7 @@ const LandingPage = ({ colors }) => {
             </section>
 
             {/* Stats Section */}
-            <section className="relative z-10 py-20">
+            <section className="relative z-10 py-20 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div 
                         className="grid grid-cols-2 lg:grid-cols-4 gap-8"
@@ -326,13 +346,17 @@ const LandingPage = ({ colors }) => {
                                 whileHover={{ y: -5 }}
                             >
                                 <div className="relative">
-                                    <div className="text-4xl lg:text-6xl font-black bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent mb-3">
+                                    <div className="text-4xl lg:text-6xl font-black mb-3" style={{ 
+                                        background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)`, 
+                                        WebkitBackgroundClip: 'text', 
+                                        WebkitTextFillColor: 'transparent' 
+                                    }}>
                                         {stat.number}
                                     </div>
-                                    <div className="text-gray-400 font-medium text-sm lg:text-base">
+                                    <div className="text-gray-600 font-medium text-sm lg:text-base">
                                         {stat.label}
                                     </div>
-                                    <div className="absolute inset-0 bg-green-500/10 blur-xl rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" />
+                                    <div className="absolute inset-0 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300" style={{ backgroundColor: 'rgba(43, 95, 76, 0.05)', filter: 'blur(20px)' }} />
                                 </div>
                             </motion.div>
                         ))}
@@ -341,7 +365,7 @@ const LandingPage = ({ colors }) => {
             </section>
 
             {/* Features Section */}
-            <section id="fonctionnalités" className="relative z-10 py-32">
+            <section id="fonctionnalités" className="relative z-10 py-32" style={{ backgroundColor: '#F8F9FA' }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div 
                         className="text-center mb-20"
@@ -351,7 +375,12 @@ const LandingPage = ({ colors }) => {
                         transition={{ duration: 0.8 }}
                     >
                         <motion.span 
-                            className="inline-block px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium mb-6"
+                            className="inline-block px-4 py-2 rounded-full border text-sm font-medium mb-6"
+                            style={{ 
+                                backgroundColor: 'rgba(43, 95, 76, 0.1)', 
+                                borderColor: 'rgba(43, 95, 76, 0.3)', 
+                                color: '#2B5F4C' 
+                            }}
                             initial={{ scale: 0 }}
                             whileInView={{ scale: 1 }}
                             viewport={{ once: true }}
@@ -360,13 +389,17 @@ const LandingPage = ({ colors }) => {
                             Fonctionnalités
                         </motion.span>
                         
-                        <h2 className="text-4xl lg:text-6xl font-black text-white mb-6 tracking-tight">
+                        <h2 className="text-4xl lg:text-6xl font-black mb-6 tracking-tight" style={{ color: '#222222' }}>
                             Tout ce dont vous
-                            <span className="block bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
+                            <span className="block" style={{ 
+                                background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)`, 
+                                WebkitBackgroundClip: 'text', 
+                                WebkitTextFillColor: 'transparent' 
+                            }}>
                                 avez besoin
                             </span>
                         </h2>
-                        <p className="text-xl text-gray-300 max-w-3xl mx-auto font-light">
+                        <p className="text-xl text-gray-600 max-w-3xl mx-auto font-light">
                             Une suite complète d'outils modernes pour révolutionner votre gestion de chantiers
                         </p>
                     </motion.div>
@@ -382,26 +415,27 @@ const LandingPage = ({ colors }) => {
                                 transition={{ duration: 0.6, delay: index * 0.1 }}
                                 whileHover={{ y: -10 }}
                             >
-                                <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 h-full hover:bg-white/10 transition-all duration-300">
+                                <div className="relative bg-white backdrop-blur-xl border border-gray-200 rounded-2xl p-8 h-full hover:shadow-xl transition-all duration-300 shadow-sm">
                                     <motion.div 
-                                        className="w-16 h-16 bg-gradient-to-r from-green-400 to-green-600 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform duration-300"
+                                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform duration-300"
+                                        style={{ background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)` }}
                                         whileHover={{ rotate: 5 }}
                                     >
                                         {feature.icon}
                                     </motion.div>
                                     
-                                    <h3 className="text-xl font-bold text-white mb-4 group-hover:text-green-400 transition-colors">
+                                    <h3 className="text-xl font-bold mb-4 transition-colors" style={{ color: '#222222' }}>
                                         {feature.title}
                                     </h3>
-                                    <p className="text-gray-400 leading-relaxed font-light">
+                                    <p className="text-gray-600 leading-relaxed font-light">
                                         {feature.description}
                                     </p>
 
                                     {/* Hover Effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl" />
+                                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(135deg, rgba(43, 95, 76, 0.03) 0%, rgba(34, 197, 94, 0.03) 100%)' }} />
                                     
                                     {/* Corner Accent */}
-                                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-400/20 to-transparent rounded-tr-2xl rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    <div className="absolute top-0 right-0 w-20 h-20 rounded-tr-2xl rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(135deg, rgba(43, 95, 76, 0.1) 0%, transparent 100%)' }} />
                                 </div>
                             </motion.div>
                         ))}
@@ -410,7 +444,7 @@ const LandingPage = ({ colors }) => {
             </section>
 
             {/* Interactive Demo Section */}
-            <section className="relative z-10 py-32">
+            <section className="relative z-10 py-32 bg-white">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div 
                         className="text-center mb-16"
@@ -419,13 +453,17 @@ const LandingPage = ({ colors }) => {
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
                     >
-                        <h2 className="text-4xl lg:text-6xl font-black text-white mb-6 tracking-tight">
+                        <h2 className="text-4xl lg:text-6xl font-black mb-6 tracking-tight" style={{ color: '#222222' }}>
                             Interface
-                            <span className="block bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
+                            <span className="block" style={{ 
+                                background: `linear-gradient(135deg, #2B5F4C 0%, #FFBB33 100%)`, 
+                                WebkitBackgroundClip: 'text', 
+                                WebkitTextFillColor: 'transparent' 
+                            }}>
                                 révolutionnaire
                             </span>
                         </h2>
-                        <p className="text-xl text-gray-300 max-w-3xl mx-auto font-light">
+                        <p className="text-xl text-gray-600 max-w-3xl mx-auto font-light">
                             Conçue pour la simplicité, pensée pour la performance
                         </p>
                     </motion.div>
@@ -437,13 +475,13 @@ const LandingPage = ({ colors }) => {
                         viewport={{ once: true }}
                         transition={{ duration: 1 }}
                     >
-                        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
-                            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-6 shadow-2xl">
+                        <div className="bg-gray-50 border border-gray-200 rounded-3xl p-8 shadow-2xl">
+                            <div className="bg-gradient-to-br from-gray-800 via-gray-700 to-gray-800 rounded-2xl p-6 shadow-2xl">
                                 <div className="flex items-center space-x-3 mb-6">
                                     <div className="w-4 h-4 bg-red-500 rounded-full"></div>
                                     <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
                                     <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                                    <div className="ml-4 bg-gray-700 rounded-lg px-4 py-1 text-gray-300 text-sm font-mono">
+                                    <div className="ml-4 bg-gray-600 rounded-lg px-4 py-1 text-gray-200 text-sm font-mono">
                                         revo.app/dashboard
                                     </div>
                                 </div>
@@ -520,7 +558,7 @@ const LandingPage = ({ colors }) => {
             </section>
 
             {/* Testimonials Section */}
-            <section id="témoignages" className="relative z-10 py-32">
+            <section id="témoignages" className="relative z-10 py-32" style={{ backgroundColor: '#F8F9FA' }}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div 
                         className="text-center mb-20"
@@ -530,7 +568,12 @@ const LandingPage = ({ colors }) => {
                         transition={{ duration: 0.8 }}
                     >
                         <motion.span 
-                            className="inline-block px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-medium mb-6"
+                            className="inline-block px-4 py-2 rounded-full border text-sm font-medium mb-6"
+                            style={{ 
+                                backgroundColor: 'rgba(43, 95, 76, 0.1)', 
+                                borderColor: 'rgba(43, 95, 76, 0.3)', 
+                                color: '#2B5F4C' 
+                            }}
                             initial={{ scale: 0 }}
                             whileInView={{ scale: 1 }}
                             viewport={{ once: true }}
@@ -539,13 +582,17 @@ const LandingPage = ({ colors }) => {
                             Témoignages
                         </motion.span>
                         
-                        <h2 className="text-4xl lg:text-6xl font-black text-white mb-6 tracking-tight">
+                        <h2 className="text-4xl lg:text-6xl font-black mb-6 tracking-tight" style={{ color: '#222222' }}>
                             Ils révolutionnent
-                            <span className="block bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
+                            <span className="block" style={{ 
+                                background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)`, 
+                                WebkitBackgroundClip: 'text', 
+                                WebkitTextFillColor: 'transparent' 
+                            }}>
                                 leur BTP
                             </span>
                         </h2>
-                        <p className="text-xl text-gray-300 max-w-3xl mx-auto font-light">
+                        <p className="text-xl text-gray-600 max-w-3xl mx-auto font-light">
                             Découvrez comment REVO transforme le quotidien des professionnels
                         </p>
                     </motion.div>
@@ -561,17 +608,18 @@ const LandingPage = ({ colors }) => {
                                 transition={{ duration: 0.6, delay: index * 0.1 }}
                                 whileHover={{ y: -5 }}
                             >
-                                <div className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 h-full hover:bg-white/10 transition-all duration-300">
+                                <div className="relative bg-white border border-gray-200 rounded-2xl p-8 h-full hover:shadow-xl transition-all duration-300 shadow-sm">
                                     <div className="flex items-center mb-6">
                                         <motion.div 
-                                            className="w-14 h-14 bg-gradient-to-r from-green-400 to-green-600 text-white rounded-full flex items-center justify-center font-bold text-lg"
+                                            className="w-14 h-14 text-white rounded-full flex items-center justify-center font-bold text-lg"
+                                            style={{ background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)` }}
                                             whileHover={{ scale: 1.1, rotate: 5 }}
                                         >
                                             {testimonial.avatar}
                                         </motion.div>
                                         <div className="ml-4">
-                                            <h4 className="font-bold text-white text-lg">{testimonial.name}</h4>
-                                            <p className="text-gray-400">{testimonial.company}</p>
+                                            <h4 className="font-bold text-lg" style={{ color: '#222222' }}>{testimonial.name}</h4>
+                                            <p className="text-gray-600">{testimonial.company}</p>
                                         </div>
                                     </div>
                                     
@@ -588,15 +636,15 @@ const LandingPage = ({ colors }) => {
                                         ))}
                                     </div>
                                     
-                                    <p className="text-gray-300 text-lg font-light leading-relaxed italic">
+                                    <p className="text-gray-700 text-lg font-light leading-relaxed italic">
                                         "{testimonial.text}"
                                     </p>
 
                                     {/* Decorative Quote */}
-                                    <div className="absolute top-4 right-4 text-6xl text-green-400/10 font-serif">"</div>
+                                    <div className="absolute top-4 right-4 text-6xl font-serif" style={{ color: 'rgba(43, 95, 76, 0.05)' }}>"</div>
                                     
                                     {/* Hover Effect */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/5 to-blue-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl" />
+                                    <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: 'linear-gradient(135deg, rgba(43, 95, 76, 0.02) 0%, rgba(34, 197, 94, 0.02) 100%)' }} />
                                 </div>
                             </motion.div>
                         ))}
@@ -605,7 +653,7 @@ const LandingPage = ({ colors }) => {
             </section>
 
             {/* Final CTA Section */}
-            <section className="relative z-10 py-32">
+            <section className="relative z-10 py-32 bg-white">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
@@ -613,19 +661,24 @@ const LandingPage = ({ colors }) => {
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
                     >
-                        <h2 className="text-4xl lg:text-6xl font-black text-white mb-8 tracking-tight">
+                        <h2 className="text-4xl lg:text-6xl font-black mb-8 tracking-tight" style={{ color: '#222222' }}>
                             Prêt à révolutionner
-                            <span className="block bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
+                            <span className="block" style={{ 
+                                background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)`, 
+                                WebkitBackgroundClip: 'text', 
+                                WebkitTextFillColor: 'transparent' 
+                            }}>
                                 votre BTP ?
                             </span>
                         </h2>
-                        <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto font-light">
+                        <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto font-light">
                             Rejoignez les centaines d'entreprises qui transforment déjà leur gestion de chantiers
                         </p>
                         
                         <motion.button 
                             onClick={() => document.querySelector('form').scrollIntoView({ behavior: 'smooth' })}
-                            className="px-12 py-6 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-xl rounded-2xl hover:from-green-600 hover:to-green-700 transition-all duration-300 inline-flex items-center group shadow-2xl"
+                            className="px-12 py-6 text-white font-bold text-xl rounded-2xl transition-all duration-300 inline-flex items-center group shadow-2xl"
+                            style={{ background: `linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)` }}
                             whileHover={{ scale: 1.05, y: -2 }}
                             whileTap={{ scale: 0.95 }}
                         >
@@ -637,7 +690,7 @@ const LandingPage = ({ colors }) => {
             </section>
 
             {/* Footer */}
-            <footer className="relative z-10 border-t border-white/10 py-20">
+            <footer className="relative z-10 border-t border-gray-200 py-20 bg-gray-900">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid md:grid-cols-4 gap-12">
                         <div className="md:col-span-2">
@@ -646,7 +699,11 @@ const LandingPage = ({ colors }) => {
                                 whileHover={{ scale: 1.05 }}
                             >
                                 <img src="/logo-blanc.svg" alt="REVO" className="h-10 w-auto" />
-                                <span className="ml-3 text-2xl font-bold bg-gradient-to-r from-green-400 to-green-600 bg-clip-text text-transparent">
+                                <span className="ml-3 text-2xl font-bold" style={{ 
+                                    background: `linear-gradient(135deg, #22C55E 0%, #2B5F4C 100%)`, 
+                                    WebkitBackgroundClip: 'text', 
+                                    WebkitTextFillColor: 'transparent' 
+                                }}>
                                     REVO
                                 </span>
                             </motion.div>
@@ -676,7 +733,7 @@ const LandingPage = ({ colors }) => {
                         </div>
                     </div>
                     
-                    <div className="border-t border-white/10 mt-16 pt-8 text-center">
+                    <div className="border-t border-gray-800 mt-16 pt-8 text-center">
                         <p className="text-gray-400">
                             &copy; 2024 REVO. Tous droits réservés. 
                             <span className="mx-2">•</span>
