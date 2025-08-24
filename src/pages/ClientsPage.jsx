@@ -16,30 +16,39 @@ const ClientCard = ({ client, sites, onClientClick }) => {
     const otherSitesCount = clientSites.length - completedSitesCount;
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col hover:shadow-md transition-shadow duration-300">
+        <div 
+            className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8 flex flex-col hover:shadow-xl hover:scale-105 transition-all duration-300 group"
+            style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}
+        >
             <div onClick={() => onClientClick(client)} className="cursor-pointer flex flex-col flex-grow">
                 <div className="flex-grow">
-                    <div className="flex justify-between items-start">
-                        <h3 className="font-bold text-lg text-gray-800 font-['Poppins']">{client.name}</h3>
-                        <div className="flex items-center gap-2">
-                            <a href={`tel:${client.phone}`} onClick={e => e.stopPropagation()} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors" aria-label="Téléphoner">
-                                <Phone size={16} />
+                    <div className="flex justify-between items-start mb-6">
+                        <h3 className="font-black text-xl tracking-tight" style={{color: '#222222'}}>{client.name}</h3>
+                        <div className="flex items-center gap-3">
+                            <a href={`tel:${client.phone}`} onClick={e => e.stopPropagation()} className="p-3 rounded-2xl bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-600 transition-all duration-300 hover:scale-110" aria-label="Téléphoner">
+                                <Phone size={18} />
                             </a>
-                            <a href={`mailto:${client.email}`} onClick={e => e.stopPropagation()} className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors" aria-label="Envoyer un email">
-                                <Mail size={16} />
+                            <a href={`mailto:${client.email}`} onClick={e => e.stopPropagation()} className="p-3 rounded-2xl bg-gray-50 hover:bg-blue-50 text-gray-600 hover:text-blue-600 transition-all duration-300 hover:scale-110" aria-label="Envoyer un email">
+                                <Mail size={18} />
                             </a>
                         </div>
                     </div>
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-around">
-                    <div className="text-center p-2 rounded-lg w-full">
-                        <p className="flex items-center justify-center gap-2 font-bold text-xl text-green-600"><CheckCircle size={20} />{completedSitesCount}</p>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider">Terminés</p>
+                <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 rounded-2xl bg-green-50 border border-green-100">
+                        <p className="flex items-center justify-center gap-3 font-black text-2xl mb-2" style={{color: '#2B5F4C'}}>
+                            <CheckCircle size={24} />
+                            {completedSitesCount}
+                        </p>
+                        <p className="text-sm font-semibold text-green-600 uppercase tracking-wider">Terminés</p>
                     </div>
-                    <div className="text-center p-2 rounded-lg w-full">
-                        <p className="flex items-center justify-center gap-2 font-bold text-xl text-yellow-600"><Wrench size={20} />{otherSitesCount}</p>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider">Autres</p>
+                    <div className="text-center p-4 rounded-2xl bg-yellow-50 border border-yellow-100">
+                        <p className="flex items-center justify-center gap-3 font-black text-2xl mb-2 text-yellow-600">
+                            <Wrench size={24} />
+                            {otherSitesCount}
+                        </p>
+                        <p className="text-sm font-semibold text-yellow-600 uppercase tracking-wider">Autres</p>
                     </div>
                 </div>
             </div>
@@ -64,21 +73,29 @@ const ClientsPage = ({ clients, sites, colors, onClientClick, onAddClient }) => 
     const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
 
     return (
-        <div className="h-full flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800 font-['Poppins']">Clients</h1>
-                <div className="flex items-center gap-4">
+        <div className="h-full flex flex-col" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+            <div className="flex justify-between items-center mb-12">
+                <div>
+                    <h1 className="text-4xl font-black tracking-tight mb-2" style={{color: '#222222'}}>Clients</h1>
+                    <p className="text-lg text-gray-600 font-light">Gérez votre portefeuille clients</p>
+                </div>
+                <div className="flex items-center gap-6">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                         <input 
                             type="text" 
                             placeholder="Rechercher un client..." 
                             value={searchTerm} 
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} 
-                            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-64 focus:outline-none focus:ring-1 focus:ring-primary"/>
+                            className="pl-12 pr-6 py-4 border border-gray-200 rounded-2xl w-80 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 font-medium shadow-sm hover:shadow-md"/>
                     </div>
-                    <button onClick={onAddClient} className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors bg-primary">
-                        <Plus size={20}/>Nouveau client
+                    <button 
+                        onClick={onAddClient} 
+                        className="flex items-center gap-3 px-6 py-4 text-white rounded-2xl font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105 shadow-md"
+                        style={{background: 'linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)'}}
+                    >
+                        <Plus size={20}/>
+                        <span className="font-medium">Nouveau client</span>
                     </button>
                 </div>
             </div>
