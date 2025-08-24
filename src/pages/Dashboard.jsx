@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { CheckSquare, Plus, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { CheckSquare, Plus, ChevronLeft, ChevronRight, Trash2, Calendar } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ResizableBox } from 'react-resizable';
