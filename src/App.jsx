@@ -79,16 +79,21 @@ export default function App() {
     useEffect(() => {
         if (!session) {
             setCompanyInfo(null); setSites([]); setClients([]); setTodos([]); setTeams([]); setChecklistTemplates([]); setKanbanColumns([]);
+            rpcCalledRef.current = false; // Reset RPC flag quand pas de session
             setAppLoading(false);
             return;
         }
         
+        let isCancelled = false; // Pour éviter les race conditions
+        
         const fetchData = async () => {
+            if (isCancelled) return;
             setAppLoading(true);
             try {
                 // D'abord, récupérer le profil utilisateur pour obtenir company_id
                 const { data: { user }, error: userError } = await supabase.auth.getUser();
                 if (userError) throw userError;
+                if (isCancelled) return;
 
                 let { data: profile, error: profileError } = await supabase
                     .from('profiles')
@@ -100,17 +105,20 @@ export default function App() {
                     console.error('Erreur (profil utilisateur):', profileError.message);
                     throw new Error('Impossible de charger le profil utilisateur');
                 }
+                if (isCancelled) return;
 
                 let companyId = profile?.company_id;
 
                 // Filet de sécurité : si pas de company_id, on appelle le RPC puis on re-fetch le profil
                 if (!companyId) {
                     console.warn('Aucune société associée — tentative de création via RPC create_my_company');
-                    if (!rpcCalledRef.current) {
+                    if (!rpcCalledRef.current && !isCancelled) {
                         rpcCalledRef.current = true;
                         const { error: rpcError } = await supabase.rpc('create_my_company');
                         if (rpcError) console.error('RPC create_my_company error (fetchData):', rpcError);
                     }
+                    if (isCancelled) return;
+                    
                     const retry = await supabase
                         .from('profiles')
                         .select('company_id, role')
@@ -123,6 +131,7 @@ export default function App() {
                         throw new Error('Aucune société associée à cet utilisateur (après tentative de bootstrap).');
                     }
                 }
+                if (isCancelled) return;
 
                 // Ensuite, charger les données en utilisant company_id
                 const [
@@ -142,6 +151,8 @@ export default function App() {
                     supabase.from('checklist_templates').select('*').eq('company_id', companyId),
                     supabase.from('todos').select('*, site_id').eq('user_id', session.user.id)
                 ]);
+                
+                if (isCancelled) return;
 
                 if (companyRes.error) {
                     console.error('Erreur (société):', companyRes.error.message);
@@ -208,10 +219,18 @@ export default function App() {
             } catch (error) {
                 console.error('Erreur lors du chargement des données:', error.message);
             } finally {
-                setAppLoading(false);
+                if (!isCancelled) {
+                    setAppLoading(false);
+                }
             }
         };
+        
         fetchData();
+        
+        // Cleanup function pour éviter les race conditions
+        return () => {
+            isCancelled = true;
+        };
     }, [session]);
 
     // --- FONCTIONS DE GESTION ---
