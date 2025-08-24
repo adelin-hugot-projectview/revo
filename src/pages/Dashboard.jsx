@@ -258,41 +258,23 @@ const TodoListWidget = ({ todos, onAddTodo, onToggleTodo, onDeleteTodo, newTodoT
     }, [todos, visibleSiteIds]);
     const handleFormSubmit = (e) => { e.preventDefault(); if (newTodoText.trim() === '') return; onAddTodo(newTodoText); setNewTodoText(''); };
     return (
-        <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-            <h2 className="text-2xl font-black tracking-tight mb-6" style={{color: '#222222'}}>Ma to-do list</h2>
-            <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
-                <ul className="space-y-5 max-h-80 overflow-y-auto pr-2">
+        <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Ma to-do list</h2>
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+                <ul className="space-y-4 max-h-80 overflow-y-auto pr-2">
                     {filteredTodos.map(todo => (
-                        <li key={todo.id} className="flex items-center justify-between group hover:bg-gray-50 p-3 rounded-2xl transition-all duration-200">
+                        <li key={todo.id} className="flex items-center justify-between group">
                             <div onClick={() => onToggleTodo(todo.id, todo.done)} className="flex items-center cursor-pointer flex-grow">
-                                <div className={`w-7 h-7 flex items-center justify-center rounded-2xl border-2 transition-all duration-300 flex-shrink-0 ${todo.done ? 'bg-gradient-to-r from-green-500 to-green-600 border-green-500 scale-110' : 'border-gray-300 group-hover:border-green-400 hover:scale-105'}`}>
-                                    <CheckSquare size={16} className={`text-white transition-all duration-300 ${todo.done ? 'opacity-100' : 'opacity-0'}`} />
-                                </div>
-                                <span className={`ml-4 font-medium transition-all duration-300 ${todo.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>{todo.text}</span>
+                                <div className={`w-6 h-6 flex items-center justify-center rounded-md border-2 transition-colors flex-shrink-0 ${todo.done ? 'bg-green-500 border-green-500' : 'border-gray-300 group-hover:border-green-400'}`}><CheckSquare size={16} className={`text-white transition-opacity ${todo.done ? 'opacity-100' : 'opacity-0'}`} /></div>
+                                <span className={`ml-3 text-sm transition-colors ${todo.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>{todo.text}</span>
                             </div>
-                            <button onClick={(e) => { e.stopPropagation(); onDeleteTodo(todo.id); }} className="ml-3 p-2 rounded-2xl text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 transition-all duration-300" aria-label="Supprimer la tâche">
-                                <Trash2 size={16} />
-                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); onDeleteTodo(todo.id); }} className="ml-2 p-1 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-100" aria-label="Supprimer la tâche"><Trash2 size={16} /></button>
                         </li>
                     ))}
                 </ul>
-                <form onSubmit={handleFormSubmit} className="flex items-center mt-6 border-t border-gray-100 pt-6">
-                    <input 
-                        type="text" 
-                        value={newTodoText} 
-                        onChange={(e) => setNewTodoText(e.target.value)} 
-                        placeholder="Nouvelle tâche..." 
-                        className="flex-grow p-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 font-medium" 
-                        autoComplete="off" 
-                        name="newTodoInput"
-                    />
-                    <button 
-                        type="submit" 
-                        className="ml-3 p-4 text-white rounded-2xl transition-all duration-300 hover:shadow-lg hover:scale-105"
-                        style={{background: 'linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)'}}
-                    >
-                        <Plus size={20} />
-                    </button>
+                <form onSubmit={handleFormSubmit} className="flex items-center mt-4 border-t pt-4">
+                    <input type="text" value={newTodoText} onChange={(e) => setNewTodoText(e.target.value)} placeholder="Nouvelle tâche..." className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-1" style={{'--tw-ring-color': '#22C55E'}} autoComplete="off" name="newTodoInput"/>
+                    <button type="submit" className="p-2 text-white rounded-r-md" style={{backgroundColor: '#22C55E'}}><Plus size={22} /></button>
                 </form>
             </div>
         </div>
@@ -305,24 +287,19 @@ const UpcomingSitesWidget = ({ sites, onSiteClick, colors }) => {
     const getEndOfThisWeek = () => { const today = new Date(); const endOfWeek = new Date(today); const dayOfWeek = today.getDay(); const diff = 7 - (dayOfWeek === 0 ? 7 : dayOfWeek); endOfWeek.setDate(today.getDate() + diff); endOfWeek.setHours(23, 59, 59, 999); return endOfWeek; };
     const futureSites = sites.filter(site => new Date(site.startDate) > getEndOfThisWeek());
     return (
-        <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
-            <h2 className="text-2xl font-black tracking-tight mb-6" style={{color: '#222222'}}>Chantiers à venir</h2>
-            <div className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 max-h-96 overflow-y-auto">
+        <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Chantiers à venir</h2>
+            <div className="bg-white p-4 rounded-xl shadow-sm max-h-96 overflow-y-auto">
                 {futureSites.length > 0 ? (
-                    <ul className="space-y-4">
+                    <ul className="space-y-3">
                         {futureSites.map(site => (
-                            <li key={site.id} className="hover:bg-gray-50 p-3 rounded-2xl transition-all duration-200">
+                            <li key={site.id}>
                                 <CalendarSiteCard site={site} onSiteClick={onSiteClick} colors={colors} />
                             </li>
                         ))}
                     </ul>
                 ) : ( 
-                    <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                            <Calendar className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <p className="text-gray-500 font-medium">Aucun chantier programmé.</p>
-                    </div> 
+                    <p className="text-center text-gray-500 py-4">Aucun chantier programmé.</p>
                 )}
             </div>
         </div>
@@ -355,18 +332,11 @@ const Dashboard = ({ colors, sites, onSiteClick, todos, onAddTodo, onToggleTodo,
     return (
         <DndProvider backend={HTML5Backend}>
             <div>
-                <div className="flex justify-between items-center mb-12">
-                     <div>
-                         <h1 className="text-4xl font-black tracking-tight mb-2" style={{color: '#222222', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"}}>Dashboard</h1>
-                         <p className="text-lg text-gray-600 font-light">Gérez vos chantiers en un coup d'œil</p>
-                     </div>
-                     <button 
-                         onClick={onAddSite} 
-                         className="flex items-center gap-3 px-6 py-3 text-white rounded-2xl font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105 shadow-md"
-                         style={{background: 'linear-gradient(135deg, #2B5F4C 0%, #22C55E 100%)'}}
-                     >
+                <div className="flex justify-between items-center mb-8">
+                     <h1 className="text-3xl font-bold" style={{color: '#374151', fontFamily: "'Poppins', sans-serif"}}>Dashboard</h1>
+                     <button onClick={onAddSite} className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-colors" style={{backgroundColor: '#22C55E'}}>
                         <Plus size={20}/>
-                        <span className="font-medium">Nouveau chantier</span>
+                        Nouveau chantier
                     </button>
                 </div>
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
