@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-// Chargement conditionnel de Stripe
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+// Chargement conditionnel de Stripe - désactivé temporairement pour éviter les blocages
+const isDevelopment = true; // Force disable Stripe for now
 let stripePromise = null;
 
 if (!isDevelopment) {
