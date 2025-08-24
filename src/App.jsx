@@ -27,6 +27,26 @@ import SignupPage from './pages/SignupPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 
 export default function App() {
+    // Gestionnaire d'erreur global
+    useEffect(() => {
+        const handleError = (event) => {
+            console.error('🚨 Erreur globale capturée:', event.error);
+            console.error('🚨 Stack trace:', event.error?.stack);
+        };
+        
+        const handleUnhandledRejection = (event) => {
+            console.error('🚨 Promise rejection non gérée:', event.reason);
+        };
+        
+        window.addEventListener('error', handleError);
+        window.addEventListener('unhandledrejection', handleUnhandledRejection);
+        
+        return () => {
+            window.removeEventListener('error', handleError);
+            window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        };
+    }, []);
+
     // --- ÉTATS ---
     const [session, setSession] = useState(null);
     const [appLoading, setAppLoading] = useState(true);
@@ -213,11 +233,33 @@ export default function App() {
                     console.error('Erreur (todos):', todosRes.error.message);
                     throw new Error(`Impossible de charger les tâches: ${todosRes.error.message}`);
                 } else {
-                    setTodos(todosRes.data.map(todo => ({ id: todo.id, text: todo.task, done: todo.is_complete, completed_at: todo.completed_at, site_id: todo.site_id })));
+                    try {
+                        const mappedTodos = (todosRes.data || []).map(todo => ({ 
+                            id: todo.id, 
+                            text: todo.task, 
+                            done: todo.is_complete, 
+                            completed_at: todo.completed_at, 
+                            site_id: todo.site_id 
+                        }));
+                        setTodos(mappedTodos);
+                    } catch (mappingError) {
+                        console.error('Erreur mapping todos:', mappingError);
+                        console.error('Données todos brutes:', todosRes.data);
+                        setTodos([]);
+                    }
                 }
 
             } catch (error) {
-                console.error('Erreur lors du chargement des données:', error.message);
+                console.error('Erreur lors du chargement des données:', error);
+                console.error('Stack trace:', error.stack);
+                // S'assurer que les états sont réinitialisés même en cas d'erreur
+                setCompanyInfo(null);
+                setSites([]);
+                setClients([]);
+                setTodos([]);
+                setTeams([]);
+                setChecklistTemplates([]);
+                setKanbanColumns([]);
             } finally {
                 if (!isCancelled) {
                     setAppLoading(false);

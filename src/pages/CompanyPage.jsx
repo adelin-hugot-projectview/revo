@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { loadStripe } from '@stripe/stripe-js';
+// Chargement conditionnel de Stripe
+const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+let stripePromise = null;
 
-// Remplacez par votre clé publique Stripe (commence par pk_test_...)
-const stripePromise = loadStripe('pk_test_51RfoRnFWG5SW3jjZJX0UoHYtvM07zGim4IlIDg3TjlJvkerEGbAp7deIFTjhfzBikIY2kMN1ZY3JprCiInlpdWx000tmVoYAXO');
+if (!isDevelopment) {
+    import('@stripe/stripe-js').then(({ loadStripe }) => {
+        stripePromise = loadStripe('pk_test_51RfoRnFWG5SW3jjZJX0UoHYtvM07zGim4IlIDg3TjlJvkerEGbAp7deIFTjhfzBikIY2kMN1ZY3JprCiInlpdWx000tmVoYAXO');
+    }).catch(err => console.log('Stripe not loaded:', err));
+}
 
 const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) => {
     const [formData, setFormData] = useState(companyInfo || {});
@@ -241,6 +246,10 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
 
     // Fonctions de gestion du paiement
     const handleCheckout = async () => {
+        if (isDevelopment) {
+            alert('Paiement désactivé en développement');
+            return;
+        }
         try {
             const stripe = await stripePromise;
 
