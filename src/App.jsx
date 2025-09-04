@@ -149,16 +149,31 @@ export default function App() {
     useEffect(() => {
         setAppLoading(true);
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             setSession(session);
+            
+            // Si on a une session au chargement (refresh de page), vérifier le profil
+            if (session?.user?.id) {
+                console.log('🔄 Session existante détectée au refresh:', session.user.id);
+                await ensureUserHasProfile(session.user);
+            }
+            
+            // Important: arrêter le loading ici car fetchData sera déclenché par le useEffect suivant
+            setAppLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             setSession(session);
-            // Au premier SIGNED_IN, vérifier et créer le profil si nécessaire
+            
+            // Au premier SIGNED_IN (nouveau login), vérifier et créer le profil si nécessaire
             if (event === 'SIGNED_IN' && session?.user?.id) {
-                console.log('✅ Utilisateur connecté:', session.user.id);
+                console.log('✅ Utilisateur connecté via login:', session.user.id);
+                setAppLoading(true);
                 await ensureUserHasProfile(session.user);
+            }
+            
+            if (event === 'SIGNED_OUT') {
+                setAppLoading(false);
             }
         });
 
