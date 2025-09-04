@@ -375,11 +375,16 @@ export default function App() {
             const siteData = {
                 ...validUpdates,
                 company_id: companyInfo.id,
-                status_id: updates.status_id || defaultStatus.id,
-                // Convertir les chaînes vides en null pour les UUIDs
-                client_id: validUpdates.client_id || null,
-                team_id: validUpdates.team_id || null
+                status_id: updates.status_id || defaultStatus.id
             };
+            
+            // Convertir les chaînes vides en null pour les UUIDs, mais seulement si le champ est présent
+            if ('client_id' in validUpdates) {
+                siteData.client_id = validUpdates.client_id || null;
+            }
+            if ('team_id' in validUpdates) {
+                siteData.team_id = validUpdates.team_id || null;
+            }
 
             console.log('📝 Données du nouveau site:', siteData);
 
@@ -436,12 +441,14 @@ export default function App() {
         // Filtrer les champs qui n'existent pas dans la base de données V2
         const { checklistTemplateId, comments, startDate, endDate, startTime, endTime, ...validUpdates } = updates;
         
-        // Convertir les chaînes vides en null pour les UUIDs
-        const cleanedUpdates = {
-            ...validUpdates,
-            client_id: validUpdates.client_id || null,
-            team_id: validUpdates.team_id || null
-        };
+        // Convertir les chaînes vides en null pour les UUIDs, mais seulement si le champ est présent
+        const cleanedUpdates = { ...validUpdates };
+        if ('client_id' in validUpdates) {
+            cleanedUpdates.client_id = validUpdates.client_id || null;
+        }
+        if ('team_id' in validUpdates) {
+            cleanedUpdates.team_id = validUpdates.team_id || null;
+        }
         
         const { data, error } = await supabase
             .from('sites')
