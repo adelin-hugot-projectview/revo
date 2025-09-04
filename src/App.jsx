@@ -375,7 +375,10 @@ export default function App() {
             const siteData = {
                 ...validUpdates,
                 company_id: companyInfo.id,
-                status_id: updates.status_id || defaultStatus.id
+                status_id: updates.status_id || defaultStatus.id,
+                // Convertir les chaînes vides en null pour les UUIDs
+                client_id: validUpdates.client_id || null,
+                team_id: validUpdates.team_id || null
             };
 
             console.log('📝 Données du nouveau site:', siteData);
@@ -433,9 +436,16 @@ export default function App() {
         // Filtrer les champs qui n'existent pas dans la base de données V2
         const { checklistTemplateId, comments, startDate, endDate, startTime, endTime, ...validUpdates } = updates;
         
+        // Convertir les chaînes vides en null pour les UUIDs
+        const cleanedUpdates = {
+            ...validUpdates,
+            client_id: validUpdates.client_id || null,
+            team_id: validUpdates.team_id || null
+        };
+        
         const { data, error } = await supabase
             .from('sites')
-            .update(validUpdates)
+            .update(cleanedUpdates)
             .eq('id', siteId)
             .select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)')
             .single();
