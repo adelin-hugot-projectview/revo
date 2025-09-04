@@ -31,7 +31,6 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite }) => {
             start_time: site.startTime || '09:00',
             end_time: site.endTime || '17:00',
             address: site.address || '',
-            comments: site.comments || '',
         });
     }, [site]);
 
@@ -94,7 +93,6 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite }) => {
                         <InfoRow label="Date de fin" value={new Date(site.endDate).toLocaleDateString('fr-FR')} />
                         <InfoRow label="Horaires" value={`${site.startTime} - ${site.endTime}`} />
                         <div className="col-span-2"> <InfoRow label="Adresse" value={site.address} /> </div>
-                        <div className="col-span-2"> <InfoRow label="Commentaires" value={site.comments} /> </div>
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-x-4 gap-y-4">
@@ -124,11 +122,6 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite }) => {
                             <InfoRow label="Adresse">
                                 <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md"/>
                             </InfoRow>
-                        </div>
-                        <div className="col-span-2">
-                             <InfoRow label="Commentaires">
-                                 <textarea name="comments" value={formData.comments} onChange={handleInputChange} rows="3" className="w-full p-2 border border-gray-300 rounded-md"></textarea>
-                             </InfoRow>
                         </div>
                     </div>
                 )}

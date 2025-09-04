@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
-import { X, ClipboardList, Plus } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, checklistTemplates, colors, onAddClient }) => {
     // On s'assure que tous les champs sont présents dans l'état initial
@@ -13,8 +13,6 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
         endTime: '12:00',
         address: '',
         team_id: '',
-        comments: '',
-        checklistTemplateId: '',
     };
     const [formData, setFormData] = useState(initialFormState);
     const [isSaving, setIsSaving] = useState(false);
@@ -140,22 +138,6 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
                         </select>
                     </div>
 
-                    {/* --- CHECKLISTS --- */}
-                    <div>
-                        <label htmlFor="checklistTemplateId" className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <ClipboardList size={16} /> Checklist associée
-                        </label>
-                        <select name="checklistTemplateId" id="checklistTemplateId" value={formData.checklistTemplateId} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                            <option value="">Aucune</option>
-                            {checklistTemplates.map(template => <option key={template.id} value={template.id}>{template.name}</option>)}
-                        </select>
-                    </div>
-
-                    {/* --- COMMENTAIRES --- */}
-                    <div>
-                        <label htmlFor="comments" className="block text-sm font-medium text-gray-700">Commentaires & Instructions</label>
-                        <textarea name="comments" id="comments" value={formData.comments} onChange={handleChange} rows="3" className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"></textarea>
-                    </div>
                 </div>
                 
                 <div className="flex justify-end gap-4 p-6 bg-gray-50 border-t">

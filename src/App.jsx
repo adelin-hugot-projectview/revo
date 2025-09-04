@@ -369,8 +369,8 @@ export default function App() {
                 return;
             }
 
-            // Filtrer les champs qui n'existent pas dans la base de données  
-            const { checklistTemplateId, ...validUpdates } = updates;
+            // Filtrer les champs qui n'existent pas dans la base de données V2
+            const { checklistTemplateId, comments, ...validUpdates } = updates;
             
             const siteData = {
                 ...validUpdates,
@@ -430,9 +430,12 @@ export default function App() {
             setSelectedSite(updatedSelectedSiteData);
         }
 
+        // Filtrer les champs qui n'existent pas dans la base de données V2
+        const { checklistTemplateId, comments, ...validUpdates } = updates;
+        
         const { data, error } = await supabase
             .from('sites')
-            .update(updates)
+            .update(validUpdates)
             .eq('id', siteId)
             .select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)')
             .single();
