@@ -2,6 +2,39 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
+// Fonction pour créer les statuts par défaut
+const createDefaultStatuses = async (companyId) => {
+  try {
+    console.log('📊 Création des statuts par défaut pour l\'entreprise:', companyId);
+    
+    const defaultStatuses = [
+      { name: 'À planifier', color: '#6B7280', position: 1, is_default: true },
+      { name: 'En cours', color: '#F59E0B', position: 2 },
+      { name: 'En attente', color: '#EF4444', position: 3 },
+      { name: 'Terminé', color: '#10B981', position: 4 },
+      { name: 'Annulé', color: '#6B7280', position: 5 }
+    ];
+    
+    const { error } = await supabase
+      .from('kanban_statuses')
+      .insert(
+        defaultStatuses.map(status => ({
+          ...status,
+          company_id: companyId,
+          applies_to: ['sites', 'prospects']
+        }))
+      );
+    
+    if (error) {
+      console.error('Erreur création statuts par défaut:', error);
+    } else {
+      console.log('✅ Statuts par défaut créés');
+    }
+  } catch (error) {
+    console.error('Erreur lors de la création des statuts:', error);
+  }
+};
+
 // Fonction pour créer une entreprise et le profil utilisateur
 const createCompanyAndProfile = async (user, companyName, fullName) => {
   try {
@@ -43,16 +76,22 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
     
     console.log('✅ Profil créé pour l\'utilisateur');
     
-    // 3. Initialiser l'entreprise avec les données par défaut
-    const { error: initError } = await supabase.rpc('initialize_company', {
-      company_uuid: company.id
-    });
-    
-    if (initError) {
-      console.error('Erreur initialisation entreprise:', initError);
-      // On continue même si l'initialisation échoue
-    } else {
-      console.log('✅ Entreprise initialisée avec les données par défaut');
+    // 3. Initialiser l'entreprise avec les données par défaut (optionnel)
+    try {
+      const { error: initError } = await supabase.rpc('initialize_company', {
+        company_uuid: company.id
+      });
+      
+      if (initError) {
+        console.warn('⚠️ Initialisation entreprise échouée (fonction RPC non disponible):', initError.message);
+        // Créer manuellement les statuts par défaut
+        await createDefaultStatuses(company.id);
+      } else {
+        console.log('✅ Entreprise initialisée avec les données par défaut via RPC');
+      }
+    } catch (error) {
+      console.warn('⚠️ RPC initialize_company non disponible, création manuelle des données par défaut');
+      await createDefaultStatuses(company.id);
     }
     
     return { success: true, company };
@@ -93,7 +132,13 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
 
   const normalizeSupabaseError = (err) => {
     if (!err) return 'Une erreur inconnue est survenue.';
+    
+    console.error('🚨 Erreur complète:', err);
+    console.error('🚨 Type d\'erreur:', typeof err);
+    console.error('🚨 Propriétés:', Object.keys(err));
+    
     const msg = err.message || String(err);
+    console.error('🚨 Message d\'erreur:', msg);
 
     if (/User already registered|already exists/i.test(msg)) {
       return "Un compte existe déjà avec cet e-mail. Essayez de vous connecter.";
@@ -104,7 +149,18 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
     if (/Password should be|weak password|password must/i.test(msg)) {
       return "Mot de passe trop faible. Utilise au moins 8 caractères.";
     }
-    return msg;
+    if (/permission denied|insufficient_privilege/i.test(msg)) {
+      return "Erreur de permissions. Vérifiez la configuration de votre base de données.";
+    }
+    if (/violates.*constraint|duplicate key/i.test(msg)) {
+      return "Erreur de contrainte de base de données. Certaines données existent déjà.";
+    }
+    if (/relation.*does not exist|table.*does not exist/i.test(msg)) {
+      return "Erreur de structure de base de données. Vérifiez que toutes les tables existent.";
+    }
+    
+    // Retourner un message plus informatif
+    return `Database error saving new user: ${msg}`;
   };
 
   const handleSubmit = async (e) => {
@@ -157,7 +213,12 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
 
       // Si la session existe immédiatement (email confirm OFF), on déclenche la création de la company
       if (authData?.session?.user) {
-        await createCompanyAndProfile(authData.session.user, cleanCompany, cleanName);
+        const result = await createCompanyAndProfile(authData.session.user, cleanCompany, cleanName);
+        if (!result.success) {
+          console.error('Erreur création entreprise/profil:', result.error);
+          throw new Error(`Erreur lors de la création de l'entreprise: ${result.error.message || result.error}`);
+        }
+        console.log('✅ Entreprise et profil créés avec succès');
       }
 
       if (authData?.user) {

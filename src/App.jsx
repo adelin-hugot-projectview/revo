@@ -94,16 +94,19 @@ const ensureUserHasProfile = async (user) => {
     
     console.log('✅ Profil créé pour l\'utilisateur');
     
-    // 3. Initialiser l'entreprise avec les données par défaut
-    const { error: initError } = await supabase.rpc('initialize_company', {
-      company_uuid: company.id
-    });
-    
-    if (initError) {
-      console.error('Erreur initialisation entreprise:', initError);
-      // On continue même si l'initialisation échoue
-    } else {
-      console.log('✅ Entreprise initialisée avec les données par défaut');
+    // 3. Initialiser l'entreprise avec les données par défaut (optionnel)
+    try {
+      const { error: initError } = await supabase.rpc('initialize_company', {
+        company_uuid: company.id
+      });
+      
+      if (initError) {
+        console.warn('⚠️ RPC initialize_company non disponible:', initError.message);
+      } else {
+        console.log('✅ Entreprise initialisée avec les données par défaut via RPC');
+      }
+    } catch (error) {
+      console.warn('⚠️ RPC initialize_company non disponible, continuons sans initialisation');
     }
     
     return { success: true, created: true, company };
