@@ -155,39 +155,20 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
     }, [sites]);
 
     const moveSite = (draggedId, newColumnId, dragIndex, hoverIndex) => {
+        // Simplification : on ne fait la mise à jour locale que si c'est un changement de colonne
+        // Les réorganisations dans la même colonne sont gérées par handleDropColumn
+        const draggedSite = localSites.find(site => site.id === draggedId);
+        if (!draggedSite || draggedSite.status_id === newColumnId) {
+            return; // Pas de changement de colonne, on ne fait rien
+        }
+
         setLocalSites((prevSites) => {
-            const draggedSite = prevSites.find(site => site.id === draggedId);
-            if (!draggedSite) return prevSites;
-
-            // Si le déplacement est dans la même colonne
-            if (draggedSite.status_id === newColumnId) {
-                const sitesInColumn = prevSites.filter(s => s.status_id === newColumnId).sort((a, b) => a.position - b.position);
-                const newSitesInColumn = [...sitesInColumn];
-                const draggedSiteInColumn = newSitesInColumn.find(s => s.id === draggedId);
-                newSitesInColumn.splice(dragIndex, 1);
-                newSitesInColumn.splice(hoverIndex, 0, draggedSiteInColumn);
-
-                // Mettre à jour les positions pour les sites de cette colonne
-                const updatedColumnSites = newSitesInColumn.map((s, idx) => ({
-                    ...s,
-                    position: idx,
-                }));
-
-                // Mettre à jour l'état global des sites
-                return prevSites.map(s => {
-                    const updated = updatedColumnSites.find(ucs => ucs.id === s.id);
-                    return updated ? updated : s;
-                });
-            } else {
-                // Si le déplacement est vers une autre colonne
-                const newSites = prevSites.map(s => {
-                    if (s.id === draggedId) {
-                        return { ...s, status_id: newColumnId, position: hoverIndex };
-                    }
-                    return s;
-                });
-                return newSites;
-            }
+            return prevSites.map(s => {
+                if (s.id === draggedId) {
+                    return { ...s, status_id: newColumnId, kanban_position: 0 };
+                }
+                return s;
+            });
         });
     };
 
@@ -199,7 +180,7 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
             // Mettre à jour la colonne et la position (à la fin de la nouvelle colonne)
             const newSites = prevSites.map(s => {
                 if (s.id === siteId) {
-                    return { ...s, status_id: newColumnId, position: sites.filter(s => s.status_id === newColumnId).length };
+                    return { ...s, status_id: newColumnId, kanban_position: sites.filter(s => s.status_id === newColumnId).length };
                 }
                 return s;
             });
@@ -212,8 +193,8 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
         // Filtrer uniquement les sites qui ont changé de position ou de colonne
         const changedSites = localSites.filter(localSite => {
             const originalSite = sites.find(s => s.id === localSite.id);
-            return originalSite && (originalSite.position !== localSite.position || originalSite.status_id !== localSite.status_id);
-        }).map(s => ({ id: s.id, position: s.position, status_id: s.status_id }));
+            return originalSite && (originalSite.kanban_position !== localSite.kanban_position || originalSite.status_id !== localSite.status_id);
+        }).map(s => ({ id: s.id, kanban_position: s.kanban_position, status_id: s.status_id }));
 
         if (changedSites.length > 0) {
             onUpdateSiteOrder(changedSites);
