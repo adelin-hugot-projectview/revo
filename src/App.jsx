@@ -369,8 +369,11 @@ export default function App() {
                 return;
             }
 
+            // Filtrer les champs qui n'existent pas dans la base de données  
+            const { checklistTemplateId, ...validUpdates } = updates;
+            
             const siteData = {
-                ...updates,
+                ...validUpdates,
                 company_id: companyInfo.id,
                 status_id: updates.status_id || defaultStatus.id
             };
