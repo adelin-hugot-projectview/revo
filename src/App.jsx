@@ -32,11 +32,14 @@ const ensureUserHasProfile = async (user) => {
     console.log('🔍 Vérification du profil pour:', user.id);
     
     // Vérifier si l'utilisateur a déjà un profil
+    console.log('📡 Tentative de requête profiles...');
     const { data: existingProfile, error: profileCheckError } = await supabase
       .from('profiles')
       .select('id, company_id')
       .eq('id', user.id)
       .single();
+    
+    console.log('📨 Réponse profiles:', { existingProfile, profileCheckError });
     
     if (existingProfile) {
       console.log('✅ Profil existant trouvé');
@@ -44,7 +47,7 @@ const ensureUserHasProfile = async (user) => {
     }
     
     if (profileCheckError?.code !== 'PGRST116') { // PGRST116 = "not found"
-      console.error('Erreur vérification profil:', profileCheckError);
+      console.error('❌ Erreur vérification profil (pas un "not found"):', profileCheckError);
       throw profileCheckError;
     }
     
@@ -206,8 +209,8 @@ export default function App() {
                     templatesRes,
                     todosRes
                 ] = await Promise.all([
-                    supabase.from('companies').select('*, stripe_customer_id, max_users').eq('id', companyId).single(),
-                    supabase.from('sites').select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position), start_date, end_date').eq('company_id', companyId).order('kanban_position', { ascending: true }),
+                    supabase.from('companies').select('*').eq('id', companyId).single(),
+                    supabase.from('sites').select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)').eq('company_id', companyId).order('position', { ascending: true }),
                     supabase.from('clients').select('*').eq('company_id', companyId),
                     supabase.from('teams').select('*').eq('company_id', companyId),
                     supabase.from('kanban_statuses').select('*').eq('company_id', companyId).order('position'),

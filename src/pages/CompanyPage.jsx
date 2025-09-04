@@ -424,9 +424,8 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                         </button>
                         <button
                             onClick={() => setShowInviteUserModal(true)}
-                            className={`px-4 py-2 text-white font-semibold rounded-lg transition-colors ${users.length >= companyInfo.max_users ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className="px-4 py-2 text-white font-semibold rounded-lg transition-colors"
                             style={{ backgroundColor: colors.primary }}
-                            disabled={users.length >= companyInfo.max_users}
                         >
                             Inviter un utilisateur
                         </button>
