@@ -370,7 +370,7 @@ export default function App() {
             }
 
             // Filtrer les champs qui n'existent pas dans la base de données V2
-            const { checklistTemplateId, comments, ...validUpdates } = updates;
+            const { checklistTemplateId, comments, startDate, endDate, startTime, endTime, ...validUpdates } = updates;
             
             const siteData = {
                 ...validUpdates,
@@ -431,7 +431,7 @@ export default function App() {
         }
 
         // Filtrer les champs qui n'existent pas dans la base de données V2
-        const { checklistTemplateId, comments, ...validUpdates } = updates;
+        const { checklistTemplateId, comments, startDate, endDate, startTime, endTime, ...validUpdates } = updates;
         
         const { data, error } = await supabase
             .from('sites')
