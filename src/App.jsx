@@ -147,61 +147,62 @@ export default function App() {
 
     // --- GESTION DE LA SESSION SUPABASE ---
     useEffect(() => {
-        let initialLoad = true;
+        console.log('🚀 Initialisation de l\'authentification');
         
-        const initializeAuth = async () => {
-            setAppLoading(true);
-
-            const { data: { session } } = await supabase.auth.getSession();
-            console.log('🔄 getSession result:', session?.user?.id);
-            setSession(session);
-            
-            // Si on a une session au chargement (refresh de page), vérifier le profil
-            if (session?.user?.id) {
-                console.log('🔄 Session existante détectée au refresh (getSession):', session.user.id);
-                try {
-                    await ensureUserHasProfile(session.user);
-                } catch (error) {
-                    console.error('Erreur lors de la vérification du profil:', error);
+        // Fonction simple pour initialiser l'auth
+        const initAuth = async () => {
+            try {
+                setAppLoading(true);
+                console.log('📡 Récupération de la session...');
+                
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                    console.error('Erreur getSession:', error);
+                    setAppLoading(false);
+                    return;
                 }
+                
+                console.log('📦 Session récupérée:', session ? 'OUI' : 'NON', session?.user?.id);
+                setSession(session);
+                
+                // Si on a une session, vérifier le profil de manière synchrone
+                if (session?.user?.id) {
+                    console.log('👤 Vérification du profil utilisateur...');
+                    const result = await ensureUserHasProfile(session.user);
+                    console.log('✅ Profil vérifié:', result.success ? 'OK' : 'ERREUR');
+                }
+                
+            } catch (error) {
+                console.error('💥 Erreur lors de l\'initialisation:', error);
+            } finally {
+                console.log('🏁 Fin de l\'initialisation, arrêt du loading');
+                setAppLoading(false);
             }
-            
-            setAppLoading(false);
-            initialLoad = false;
         };
 
-        initializeAuth();
+        // Démarrer l'initialisation
+        initAuth();
 
+        // Écouter les changements d'auth (login/logout seulement)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log('🔔 Auth state change:', event, session?.user?.id, 'initialLoad:', initialLoad);
+            console.log('🔔 Changement d\'auth:', event);
             
-            // Ignorer les événements pendant le chargement initial
-            if (initialLoad) {
-                console.log('⏭️ Ignorer événement pendant le chargement initial');
-                return;
-            }
-            
-            setSession(session);
-            
-            // Au nouveau SIGNED_IN, vérifier et créer le profil si nécessaire
-            if (event === 'SIGNED_IN' && session?.user?.id) {
-                console.log('✅ Nouvel utilisateur connecté via login:', session.user.id);
-                setAppLoading(true);
-                try {
-                    await ensureUserHasProfile(session.user);
-                } catch (error) {
-                    console.error('Erreur lors de la vérification du profil:', error);
-                } finally {
-                    setAppLoading(false);
-                }
+            if (event === 'SIGNED_IN') {
+                console.log('✅ Login détecté');
+                setSession(session);
+                // Pas besoin de vérifier le profil ici, c'est fait dans fetchData
             }
             
             if (event === 'SIGNED_OUT') {
+                console.log('🚪 Logout détecté');
+                setSession(null);
                 setAppLoading(false);
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     // --- CHARGEMENT DES DONNÉES DEPUIS SUPABASE ---
