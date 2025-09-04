@@ -147,29 +147,53 @@ export default function App() {
 
     // --- GESTION DE LA SESSION SUPABASE ---
     useEffect(() => {
-        setAppLoading(true);
+        let initialLoad = true;
+        
+        const initializeAuth = async () => {
+            setAppLoading(true);
 
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
+            const { data: { session } } = await supabase.auth.getSession();
+            console.log('🔄 getSession result:', session?.user?.id);
             setSession(session);
             
             // Si on a une session au chargement (refresh de page), vérifier le profil
             if (session?.user?.id) {
-                console.log('🔄 Session existante détectée au refresh:', session.user.id);
-                await ensureUserHasProfile(session.user);
+                console.log('🔄 Session existante détectée au refresh (getSession):', session.user.id);
+                try {
+                    await ensureUserHasProfile(session.user);
+                } catch (error) {
+                    console.error('Erreur lors de la vérification du profil:', error);
+                }
             }
             
-            // Important: arrêter le loading ici car fetchData sera déclenché par le useEffect suivant
             setAppLoading(false);
-        });
+            initialLoad = false;
+        };
+
+        initializeAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            console.log('🔔 Auth state change:', event, session?.user?.id, 'initialLoad:', initialLoad);
+            
+            // Ignorer les événements pendant le chargement initial
+            if (initialLoad) {
+                console.log('⏭️ Ignorer événement pendant le chargement initial');
+                return;
+            }
+            
             setSession(session);
             
-            // Au premier SIGNED_IN (nouveau login), vérifier et créer le profil si nécessaire
+            // Au nouveau SIGNED_IN, vérifier et créer le profil si nécessaire
             if (event === 'SIGNED_IN' && session?.user?.id) {
-                console.log('✅ Utilisateur connecté via login:', session.user.id);
+                console.log('✅ Nouvel utilisateur connecté via login:', session.user.id);
                 setAppLoading(true);
-                await ensureUserHasProfile(session.user);
+                try {
+                    await ensureUserHasProfile(session.user);
+                } catch (error) {
+                    console.error('Erreur lors de la vérification du profil:', error);
+                } finally {
+                    setAppLoading(false);
+                }
             }
             
             if (event === 'SIGNED_OUT') {
