@@ -210,7 +210,7 @@ export default function App() {
                     todosRes
                 ] = await Promise.all([
                     supabase.from('companies').select('*').eq('id', companyId).single(),
-                    supabase.from('sites').select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)').eq('company_id', companyId).order('position', { ascending: true }),
+                    supabase.from('sites').select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)').eq('company_id', companyId),
                     supabase.from('clients').select('*').eq('company_id', companyId),
                     supabase.from('teams').select('*').eq('company_id', companyId),
                     supabase.from('kanban_statuses').select('*').eq('company_id', companyId).order('position'),
@@ -355,6 +355,57 @@ export default function App() {
         const originalSites = [...sites];
         const originalSelectedSite = selectedSite ? { ...selectedSite } : null;
 
+        // CRÉATION d'un nouveau site (si siteId est null ou undefined)
+        if (!siteId) {
+            console.log('🆕 Création d\'un nouveau site');
+            
+            // Récupérer le statut par défaut (position 1, is_default=true, ou le premier)
+            const defaultStatus = kanbanStatuses.find(s => s.is_default) || 
+                                  kanbanStatuses.find(s => s.position === 1) || 
+                                  kanbanStatuses[0];
+            
+            if (!defaultStatus) {
+                alert("Aucun statut disponible. Créez d'abord un statut.");
+                return;
+            }
+
+            const siteData = {
+                ...updates,
+                company_id: companyInfo.id,
+                status_id: updates.status_id || defaultStatus.id
+            };
+
+            console.log('📝 Données du nouveau site:', siteData);
+
+            const { data, error } = await supabase
+                .from('sites')
+                .insert([siteData])
+                .select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)')
+                .single();
+
+            if (error) {
+                console.error('❌ Erreur création site:', error);
+                alert(`Erreur lors de la création: ${error.message}`);
+                return;
+            }
+
+            const formattedSite = {
+                ...data,
+                client: data.client ? data.client.name : 'Client non défini',
+                clientData: data.client,
+                team: data.team,
+                startTime: data.start_time,
+                endTime: data.end_time,
+                startDate: data.start_date,
+                endDate: data.end_date
+            };
+
+            setSites(prevSites => [...prevSites, formattedSite]);
+            console.log('✅ Site créé avec succès');
+            return;
+        }
+
+        // MISE À JOUR d'un site existant
         const updatedSites = sites.map(site => {
             if (site.id === siteId) {
                 const newStatus = updates.status_id
