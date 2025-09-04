@@ -44,13 +44,18 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
-        await onSave({
-            ...formData,
-            start_date: formData.startDate,
-            end_date: formData.endDate,
-            start_time: formData.startTime,
-            end_time: formData.endTime,
-        });
+        try {
+            await onSave(null, {
+                ...formData,
+                start_date: formData.startDate,
+                end_date: formData.endDate,
+                start_time: formData.startTime,
+                end_time: formData.endTime,
+            });
+            onRequestClose();
+        } catch (error) {
+            console.error('Erreur création chantier:', error);
+        }
         setIsSaving(false);
     };
 
