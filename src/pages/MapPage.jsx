@@ -15,9 +15,9 @@ const createCustomIcon = (color) => {
 const MapBoundsUpdater = ({ sites }) => {
     const map = useMap();
     useEffect(() => {
-        const validSites = sites.filter(site => typeof site.lat === 'number' && typeof site.lng === 'number');
+        const validSites = sites.filter(site => typeof site.latitude === 'number' && typeof site.longitude === 'number');
         if (validSites.length > 0) {
-            const bounds = L.latLngBounds(validSites.map(site => [site.lat, site.lng]));
+            const bounds = L.latLngBounds(validSites.map(site => [site.latitude, site.longitude]));
             if (bounds.isValid()) {
                 map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
             }
@@ -40,9 +40,9 @@ const MapPage = ({ sites, teams = [], statusColumns = [], colors, onSiteClick, o
     };
 
     const filteredSites = useMemo(() => sites.filter(site => {
-        if (typeof site.lat !== 'number' || typeof site.lng !== 'number') return false;
+        if (typeof site.latitude !== 'number' || typeof site.longitude !== 'number') return false;
         
-        const siteDate = new Date(site.date);
+        const siteDate = new Date(site.start_date);
         const start = dateRange.start;
         const end = dateRange.end;
         if(start) start.setHours(0,0,0,0);
@@ -93,7 +93,7 @@ const MapPage = ({ sites, teams = [], statusColumns = [], colors, onSiteClick, o
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                     />
                     {filteredSites.map(site => (
-                        <Marker key={site.id} position={[site.lat, site.lng]} icon={getSiteIcon(site.status?.color)}>
+                        <Marker key={site.id} position={[site.latitude, site.longitude]} icon={getSiteIcon(site.status?.color)}>
                             <Popup>
                                 <div className="p-1 font-['Inter'] space-y-1">
                                     <h3 className="font-bold text-base" style={{color: colors.primary}}>{site.name}</h3>

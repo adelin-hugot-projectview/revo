@@ -44,7 +44,7 @@ const DraggableSiteCard = ({ site, index, onSiteClick, colors, moveSite }) => {
             if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
 
             // Temps d'exécution de l'action
-            moveSite(item.id, site.kanban_column_id, dragIndex, hoverIndex);
+            moveSite(item.id, site.status_id, dragIndex, hoverIndex);
 
             // Remarque : l'index de l'élément de glissement est modifié ici pour éviter des calculs coûteux
             // dans la fonction hover suivante
@@ -54,7 +54,7 @@ const DraggableSiteCard = ({ site, index, onSiteClick, colors, moveSite }) => {
 
     const [{ isDragging }, drag] = useDrag({
         type: ItemTypes.SITE_CARD,
-        item: () => ({ id: site.id, index, kanban_column_id: site.kanban_column_id }),
+        item: () => ({ id: site.id, index, status_id: site.status_id }),
         collect: (monitor) => ({
             isDragging: monitor.isDragging(),
         }),
@@ -160,8 +160,8 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
             if (!draggedSite) return prevSites;
 
             // Si le déplacement est dans la même colonne
-            if (draggedSite.kanban_column_id === newColumnId) {
-                const sitesInColumn = prevSites.filter(s => s.kanban_column_id === newColumnId).sort((a, b) => a.position - b.position);
+            if (draggedSite.status_id === newColumnId) {
+                const sitesInColumn = prevSites.filter(s => s.status_id === newColumnId).sort((a, b) => a.position - b.position);
                 const newSitesInColumn = [...sitesInColumn];
                 const draggedSiteInColumn = newSitesInColumn.find(s => s.id === draggedId);
                 newSitesInColumn.splice(dragIndex, 1);
@@ -182,7 +182,7 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
                 // Si le déplacement est vers une autre colonne
                 const newSites = prevSites.map(s => {
                     if (s.id === draggedId) {
-                        return { ...s, kanban_column_id: newColumnId, position: hoverIndex };
+                        return { ...s, status_id: newColumnId, position: hoverIndex };
                     }
                     return s;
                 });
@@ -199,7 +199,7 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
             // Mettre à jour la colonne et la position (à la fin de la nouvelle colonne)
             const newSites = prevSites.map(s => {
                 if (s.id === siteId) {
-                    return { ...s, kanban_column_id: newColumnId, position: sites.filter(s => s.kanban_column_id === newColumnId).length };
+                    return { ...s, status_id: newColumnId, position: sites.filter(s => s.status_id === newColumnId).length };
                 }
                 return s;
             });
@@ -212,8 +212,8 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
         // Filtrer uniquement les sites qui ont changé de position ou de colonne
         const changedSites = localSites.filter(localSite => {
             const originalSite = sites.find(s => s.id === localSite.id);
-            return originalSite && (originalSite.position !== localSite.position || originalSite.kanban_column_id !== localSite.kanban_column_id);
-        }).map(s => ({ id: s.id, position: s.position, kanban_column_id: s.kanban_column_id }));
+            return originalSite && (originalSite.position !== localSite.position || originalSite.status_id !== localSite.status_id);
+        }).map(s => ({ id: s.id, position: s.position, status_id: s.status_id }));
 
         if (changedSites.length > 0) {
             onUpdateSiteOrder(changedSites);
@@ -251,7 +251,7 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
                         <KanbanColumn
                             key={status.id}
                             status={status}
-                            sites={localSites.filter(site => site.kanban_column_id === status.id).sort((a, b) => a.position - b.position)}
+                            sites={localSites.filter(site => site.status_id === status.id).sort((a, b) => a.position - b.position)}
                             onSiteClick={onSiteClick}
                             colors={colors}
                             moveSite={moveSite}

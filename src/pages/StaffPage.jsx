@@ -10,7 +10,7 @@ const UserModal = ({ isOpen, onRequestClose, onSave, user, teams, colors }) => {
 
     useEffect(() => {
         Modal.setAppElement('#root');
-        setFormData(user || { full_name: '', email: '', role: 'Employé', team_id: null });
+        setFormData(user || { full_name: '', email: '', role: 'employe', team_id: null });
     }, [user, isOpen]);
 
     const handleChange = (e) => {
@@ -51,9 +51,9 @@ const UserModal = ({ isOpen, onRequestClose, onSave, user, teams, colors }) => {
                     <div>
                         <label htmlFor="role" className="block text-sm font-medium text-gray-700">Rôle</label>
                         <select name="role" id="role" value={formData.role} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                            <option>Administrateur</option>
-                            <option>Chef de chantier</option>
-                            <option>Employé</option>
+                            <option value="admin">Administrateur</option>
+                            <option value="chef_chantier">Chef de chantier</option>
+                            <option value="employe">Employé</option>
                         </select>
                     </div>
                     <div>

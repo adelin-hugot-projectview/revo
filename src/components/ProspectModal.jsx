@@ -12,7 +12,7 @@ const ProspectModal = ({ isOpen, onRequestClose, onSave, columns, prospect, defa
             setFormData({
                 project_name: '',
                 contact_name: '',
-                kanban_column_id: defaultColumnId || (columns[0]?.id || ''),
+                status_id: defaultColumnId || (columns[0]?.id || ''),
                 phone: '',
                 email: '',
                 address: '',
@@ -58,8 +58,8 @@ const ProspectModal = ({ isOpen, onRequestClose, onSave, columns, prospect, defa
                             <input type="text" name="contact_name" value={formData.contact_name || ''} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md" />
                         </div>
                         <div>
-                            <label htmlFor="kanban_column_id" className="block text-sm font-medium text-gray-700">Statut</label>
-                            <select name="kanban_column_id" value={formData.kanban_column_id || ''} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md bg-white">
+                            <label htmlFor="status_id" className="block text-sm font-medium text-gray-700">Statut</label>
+                            <select name="status_id" value={formData.status_id || ''} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md bg-white">
                                 {columns.map(col => <option key={col.id} value={col.id}>{col.name}</option>)}
                             </select>
                         </div>

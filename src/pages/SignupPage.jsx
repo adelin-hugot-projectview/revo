@@ -86,7 +86,7 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
           data: {
             full_name: cleanName,
             company_name: cleanCompany,
-            role: 'Administrateur', // Le créateur sera admin/owner côté DB
+            role: 'admin', // Le créateur sera admin/owner côté DB
           },
         },
       });

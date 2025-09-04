@@ -64,7 +64,7 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite }) => {
         setIsEditing(false);
     };
 
-    const hasCoordinates = typeof site.lat === 'number' && typeof site.lng === 'number';
+    const hasCoordinates = typeof site.latitude === 'number' && typeof site.longitude === 'number';
 
     return (
         <div className="space-y-6">
@@ -136,9 +136,9 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite }) => {
             
             <div className="h-48 w-full rounded-lg overflow-hidden border z-10">
                 {hasCoordinates ? (
-                    <MapContainer center={[site.lat, site.lng]} zoom={15} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
+                    <MapContainer center={[site.latitude, site.longitude]} zoom={15} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
                         <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; OpenStreetMap &copy; CARTO'/>
-                        <Marker position={[site.lat, site.lng]} icon={createCustomIcon(colors.primary)}>
+                        <Marker position={[site.latitude, site.longitude]} icon={createCustomIcon(colors.primary)}>
                             <Popup>{site.name}</Popup>
                         </Marker>
                     </MapContainer>
