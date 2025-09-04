@@ -46,7 +46,7 @@ export default function App() {
     const [isClientModalOpen, setIsClientModalOpen] = useState(false);
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [newTodoText, setNewTodoText] = useState('');
-    const [kanbanColumns, setKanbanColumns] = useState([]); // Utilisé comme "statuts"
+    const [kanbanStatuses, setKanbanStatuses] = useState([]); // Statuts kanban
     const [currentUserRole, setCurrentUserRole] = useState(null); // rôle de l'utilisateur
 
     // Empêche de rappeler le RPC plusieurs fois pour la même session
@@ -78,7 +78,7 @@ export default function App() {
     // --- CHARGEMENT DES DONNÉES DEPUIS SUPABASE ---
     useEffect(() => {
         if (!session) {
-            setCompanyInfo(null); setSites([]); setClients([]); setTodos([]); setTeams([]); setChecklistTemplates([]); setKanbanColumns([]);
+            setCompanyInfo(null); setSites([]); setClients([]); setTodos([]); setTeams([]); setChecklistTemplates([]); setKanbanStatuses([]);
             setAppLoading(false);
             return;
         }
@@ -135,10 +135,10 @@ export default function App() {
                     todosRes
                 ] = await Promise.all([
                     supabase.from('companies').select('*, stripe_customer_id, max_users').eq('id', companyId).single(),
-                    supabase.from('sites').select('*, client:clients(*), team:teams(id, name), status:kanban_columns(id, name, color, position), start_date, end_date').eq('company_id', companyId).order('position', { ascending: true }),
+                    supabase.from('sites').select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position), start_date, end_date').eq('company_id', companyId).order('kanban_position', { ascending: true }),
                     supabase.from('clients').select('*').eq('company_id', companyId),
                     supabase.from('teams').select('*').eq('company_id', companyId),
-                    supabase.from('kanban_columns').select('*').eq('company_id', companyId).order('position'),
+                    supabase.from('kanban_statuses').select('*').eq('company_id', companyId).order('position'),
                     supabase.from('checklist_templates').select('*').eq('company_id', companyId),
                     supabase.from('todos').select('*, site_id').eq('user_id', session.user.id)
                 ]);
@@ -178,7 +178,7 @@ export default function App() {
                     console.error('Erreur (statuts):', kanbanColumnsRes.error.message);
                     throw new Error(`Impossible de charger les statuts: ${kanbanColumnsRes.error.message}`);
                 } else {
-                    setKanbanColumns(kanbanColumnsRes.data || []);
+                    setKanbanStatuses(kanbanColumnsRes.data || []);
                 }
                 
                 if (sitesRes.error) {
@@ -202,7 +202,7 @@ export default function App() {
                     console.error('Erreur (todos):', todosRes.error.message);
                     throw new Error(`Impossible de charger les tâches: ${todosRes.error.message}`);
                 } else {
-                    setTodos(todosRes.data.map(todo => ({ id: todo.id, text: todo.task, done: todo.is_complete, completed_at: todo.completed_at, site_id: todo.site_id })));
+                    setTodos(todosRes.data.map(todo => ({ id: todo.id, text: todo.title, done: todo.is_completed, completed_at: todo.completed_at, site_id: todo.site_id })));
                 }
 
             } catch (error) {
@@ -282,8 +282,8 @@ export default function App() {
 
         const updatedSites = sites.map(site => {
             if (site.id === siteId) {
-                const newStatus = updates.kanban_column_id
-                    ? kanbanColumns.find(c => c.id === updates.kanban_column_id)
+                const newStatus = updates.status_id
+                    ? kanbanStatuses.find(c => c.id === updates.status_id)
                     : site.status;
                 return {
                     ...site,
@@ -305,7 +305,7 @@ export default function App() {
             .from('sites')
             .update(updates)
             .eq('id', siteId)
-            .select('*, client:clients(*), team:teams(id, name), status:kanban_columns(id, name, color, position)')
+            .select('*, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)')
             .single();
 
         if (error) {
@@ -340,8 +340,8 @@ export default function App() {
             const { error } = await supabase
                 .from('sites')
                 .update({
-                    kanban_column_id: updatedSite.kanban_column_id,
-                    position: updatedSite.position,
+                    status_id: updatedSite.status_id,
+                    kanban_position: updatedSite.kanban_position,
                 })
                 .eq('id', updatedSite.id);
 
@@ -354,7 +354,7 @@ export default function App() {
 
         await Promise.all(updatePromises);
 
-        const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('*, client:clients(name), team:teams(id, name), status:kanban_columns(id, name, color, position)').order('position', { ascending: true });
+        const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('*, client:clients(name), team:teams(id, name), status:kanban_statuses(id, name, color, position)').order('kanban_position', { ascending: true });
         if (sitesError) {
             console.error('Erreur (re-fetch chantiers):', sitesError.message);
         } else {
@@ -381,12 +381,12 @@ export default function App() {
             company_id: companyInfo.id
         }));
 
-        const { data, error } = await supabase.from('kanban_columns').upsert(upserts).select();
+        const { data, error } = await supabase.from('kanban_statuses').upsert(upserts).select();
 
         if (error) {
             console.error('Erreur (maj statuts):', error);
         } else {
-            setKanbanColumns(data.sort((a, b) => a.position - b.position));
+            setKanbanStatuses(data.sort((a, b) => a.position - b.position));
         }
     };
 
@@ -397,11 +397,11 @@ export default function App() {
             return;
         }
 
-        const { error } = await supabase.from('kanban_columns').delete().eq('id', statusId);
+        const { error } = await supabase.from('kanban_statuses').delete().eq('id', statusId);
         if (error) {
             console.error('Erreur (suppression statut):', error);
         } else {
-            setKanbanColumns(prev => prev.filter(s => s.id !== statusId));
+            setKanbanStatuses(prev => prev.filter(s => s.id !== statusId));
         }
     };
 
@@ -416,14 +416,14 @@ export default function App() {
         const { data, error } = await supabase.from('todos').insert({
             user_id: session.user.id,
             company_id: companyInfo.id,
-            task: taskText,
+            title: taskText,
         }).select().single();
         if (error) {
             console.error('Erreur (ajout todo):', error);
         } else {
             console.log('Nouvelle tâche ajoutée à Supabase:', data);
             setTodos(prev => {
-                const updatedTodos = [...prev, { id: data.id, text: data.task, done: data.is_complete, completed_at: data.completed_at, site_id: data.site_id }];
+                const updatedTodos = [...prev, { id: data.id, text: data.title, done: data.is_completed, completed_at: data.completed_at, site_id: data.site_id }];
                 console.log('Todos après ajout:', updatedTodos);
                 return updatedTodos;
             });
@@ -432,7 +432,7 @@ export default function App() {
 
     const handleToggleTodo = async (todoId, currentStatus) => {
         const newStatus = !currentStatus;
-        const { error } = await supabase.from('todos').update({ is_complete: newStatus, completed_at: newStatus ? new Date().toISOString() : null }).eq('id', todoId);
+        const { error } = await supabase.from('todos').update({ is_completed: newStatus, completed_at: newStatus ? new Date().toISOString() : null }).eq('id', todoId);
         if (error) {
             console.error('Erreur (toggle todo):', error);
         } else {
@@ -471,7 +471,7 @@ export default function App() {
     const isPanelOpen = !!(selectedSite || selectedClient);
     
     const renderActivePage = () => {
-        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanColumns, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalOpen(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
+        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanStatuses, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalOpen(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
         switch (activePage) {
             case 'Dashboard': return <Dashboard {...pageProps} todos={todos} newTodoText={setNewTodoText ? newTodoText : ''} setNewTodoText={setNewTodoText} onAddTodo={handleAddTodo} onToggleTodo={handleToggleTodo} onDeleteTodo={handleDeleteTodo} />;
             case 'Chantiers': return <SitesListPage {...pageProps} />;
@@ -495,7 +495,7 @@ export default function App() {
     if (selectedSite) {
         const siteData = sites.find(s => s.id === selectedSite.id);
         if (siteData) {
-            panelHeader = ( <div className="flex items-center justify-between w-full"> <h2 className="text-xl font-bold truncate pr-4">{siteData.name}</h2> <StatusBadge currentStatus={siteData.status} onStatusChange={(newStatusId) => handleUpdateSite(siteData.id, { kanban_column_id: newStatusId })} availableStatuses={kanbanColumns} colors={colors} /> </div> );
+            panelHeader = ( <div className="flex items-center justify-between w-full"> <h2 className="text-xl font-bold truncate pr-4">{siteData.name}</h2> <StatusBadge currentStatus={siteData.status} onStatusChange={(newStatusId) => handleUpdateSite(siteData.id, { status_id: newStatusId })} availableStatuses={kanbanStatuses} colors={colors} /> </div> );
             panelContent = <SiteDetail site={siteData} onUpdateSite={(updates) => handleUpdateSite(siteData.id, updates)} teams={teams} checklistTemplates={checklistTemplates} colors={colors} />;
             panelWidthClass = 'max-w-xl';
         }
@@ -520,9 +520,9 @@ export default function App() {
                 </main>
             </div>
             <SidePanel header={panelHeader} isOpen={!!(selectedSite || selectedClient)} onClose={handleClosePanel} colors={colors} widthClass={panelWidthClass}> {panelContent} </SidePanel>
-            <SiteCreationModal isOpen={isSiteModalOpen} onRequestClose={() => setIsSiteModalOpen(false)} clients={clients} teams={teams} onSave={handleUpdateSite} colors={colors} checklistTemplates={checklistTemplates} availableStatuses={kanbanColumns} onAddClient={() => setIsClientModalOpen(true)} />
+            <SiteCreationModal isOpen={isSiteModalOpen} onRequestClose={() => setIsSiteModalOpen(false)} clients={clients} teams={teams} onSave={handleUpdateSite} colors={colors} checklistTemplates={checklistTemplates} availableStatuses={kanbanStatuses} onAddClient={() => setIsClientModalOpen(true)} />
             <ClientCreationModal isOpen={isClientModalOpen} onRequestClose={() => setIsClientModalOpen(false)} onSave={handleSaveClient} colors={colors} />
-            <StatusManagementModal isOpen={isStatusModalOpen} onRequestClose={() => setIsStatusModalOpen(false)} statusColumns={kanbanColumns} onSave={handleSaveStatusColumns} onDelete={handleDeleteStatusColumn} colors={colors} />
+            <StatusManagementModal isOpen={isStatusModalOpen} onRequestClose={() => setIsStatusModalOpen(false)} statusColumns={kanbanStatuses} onSave={handleSaveStatusColumns} onDelete={handleDeleteStatusColumn} colors={colors} />
         </div>
     );
 }
