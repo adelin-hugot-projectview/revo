@@ -43,12 +43,15 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
         e.preventDefault();
         setIsSaving(true);
         try {
+            // Séparer les champs temporels des autres données
+            const { startDate, endDate, startTime, endTime, ...otherData } = formData;
+            
             await onSave(null, {
-                ...formData,
-                start_date: formData.startDate,
-                end_date: formData.endDate,
-                start_time: formData.startTime,
-                end_time: formData.endTime,
+                ...otherData,
+                start_date: startDate,
+                end_date: endDate,
+                start_time: startTime,
+                end_time: endTime,
             });
             onRequestClose();
         } catch (error) {
