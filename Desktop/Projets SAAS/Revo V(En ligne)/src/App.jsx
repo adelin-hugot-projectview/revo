@@ -78,7 +78,7 @@ export default function App() {
     // --- CHARGEMENT DES DONNÉES DEPUIS SUPABASE ---
     useEffect(() => {
         if (!session) {
-            setCompanyInfo(null); setSites([]); setClients([]); setTodos([]); setTeams([]); setChecklistTemplates([]); setKanbanColumns([]);
+            setCompanyInfo(null); setSites([]); setClients([]); setTodos([]); setTeams([]); setChecklistTemplates([]); setKanbanStatuses([]);
             setAppLoading(false);
             return;
         }
@@ -178,7 +178,7 @@ export default function App() {
                     console.error('Erreur (statuts):', kanbanColumnsRes.error.message);
                     throw new Error(`Impossible de charger les statuts: ${kanbanColumnsRes.error.message}`);
                 } else {
-                    setKanbanStatuses(kanbanStatusesRes.data || []);
+                    setKanbanStatuses(kanbanColumnsRes.data || []);
                 }
                 
                 if (sitesRes.error) {
@@ -340,8 +340,8 @@ export default function App() {
             const { error } = await supabase
                 .from('sites')
                 .update({
-                    kanban_column_id: updatedSite.kanban_column_id,
-                    position: updatedSite.position,
+                    status_id: updatedSite.status_id,
+                    kanban_position: updatedSite.kanban_position,
                 })
                 .eq('id', updatedSite.id);
 
@@ -354,7 +354,7 @@ export default function App() {
 
         await Promise.all(updatePromises);
 
-        const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('*, client:clients(name), team:teams(id, name), status:kanban_columns(id, name, color, position)').order('position', { ascending: true });
+        const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('*, client:clients(name), team:teams(id, name), status:kanban_statuses(id, name, color, position)').order('kanban_position', { ascending: true });
         if (sitesError) {
             console.error('Erreur (re-fetch chantiers):', sitesError.message);
         } else {
@@ -381,12 +381,12 @@ export default function App() {
             company_id: companyInfo.id
         }));
 
-        const { data, error } = await supabase.from('kanban_columns').upsert(upserts).select();
+        const { data, error } = await supabase.from('kanban_statuses').upsert(upserts).select();
 
         if (error) {
             console.error('Erreur (maj statuts):', error);
         } else {
-            setKanbanColumns(data.sort((a, b) => a.position - b.position));
+            setKanbanStatuses(data.sort((a, b) => a.position - b.position));
         }
     };
 
@@ -471,7 +471,7 @@ export default function App() {
     const isPanelOpen = !!(selectedSite || selectedClient);
     
     const renderActivePage = () => {
-        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanColumns, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalOpen(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
+        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanStatuses, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalOpen(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
         switch (activePage) {
             case 'Dashboard': return <Dashboard {...pageProps} todos={todos} newTodoText={setNewTodoText ? newTodoText : ''} setNewTodoText={setNewTodoText} onAddTodo={handleAddTodo} onToggleTodo={handleToggleTodo} onDeleteTodo={handleDeleteTodo} />;
             case 'Chantiers': return <SitesListPage {...pageProps} />;
