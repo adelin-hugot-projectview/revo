@@ -438,17 +438,25 @@ export default function App() {
             setSelectedSite(updatedSelectedSiteData);
         }
 
-        // Filtrer les champs qui n'existent pas dans la base de données V2
-        const { checklistTemplateId, comments, startDate, endDate, startTime, endTime, ...validUpdates } = updates;
+        // Construire manuellement l'objet avec seulement les champs valides
+        const cleanedUpdates = {};
         
-        // Convertir les chaînes vides en null pour les UUIDs, mais seulement si le champ est présent
-        const cleanedUpdates = { ...validUpdates };
-        if ('client_id' in validUpdates) {
-            cleanedUpdates.client_id = validUpdates.client_id || null;
-        }
-        if ('team_id' in validUpdates) {
-            cleanedUpdates.team_id = validUpdates.team_id || null;
-        }
+        // Champs autorisés pour les sites
+        const allowedFields = ['name', 'address', 'start_date', 'end_date', 'start_time', 'end_time', 'status_id', 'client_id', 'team_id', 'kanban_position'];
+        
+        allowedFields.forEach(field => {
+            if (field in updates) {
+                if (field === 'client_id' || field === 'team_id') {
+                    // Convertir les chaînes vides en null pour les UUIDs
+                    cleanedUpdates[field] = updates[field] || null;
+                } else {
+                    cleanedUpdates[field] = updates[field];
+                }
+            }
+        });
+        
+        console.log('🔍 DEBUG - Original updates:', updates);
+        console.log('🔍 DEBUG - Final cleaned updates:', cleanedUpdates);
         
         const { data, error } = await supabase
             .from('sites')
