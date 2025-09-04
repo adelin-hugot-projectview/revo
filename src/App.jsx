@@ -26,6 +26,93 @@ import LoginPage from './pages/LoginPage.jsx';
 import SignupPage from './pages/SignupPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 
+// Fonction pour s'assurer qu'un utilisateur a un profil et une entreprise
+const ensureUserHasProfile = async (user) => {
+  try {
+    console.log('🔍 Vérification du profil pour:', user.id);
+    
+    // Vérifier si l'utilisateur a déjà un profil
+    const { data: existingProfile, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id, company_id')
+      .eq('id', user.id)
+      .single();
+    
+    if (existingProfile) {
+      console.log('✅ Profil existant trouvé');
+      return { success: true, existing: true };
+    }
+    
+    if (profileCheckError?.code !== 'PGRST116') { // PGRST116 = "not found"
+      console.error('Erreur vérification profil:', profileCheckError);
+      throw profileCheckError;
+    }
+    
+    console.log('⚠️ Aucun profil trouvé, création en cours...');
+    
+    // Récupérer les métadonnées de l'inscription
+    const userMetadata = user.user_metadata || {};
+    const fullName = userMetadata.full_name || user.email?.split('@')[0] || 'Utilisateur';
+    const companyName = userMetadata.company_name || `Entreprise de ${fullName}`;
+    const role = userMetadata.role || 'admin';
+    
+    console.log('📋 Métadonnées:', { fullName, companyName, role });
+    
+    // 1. Créer l'entreprise
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .insert([{
+        name: companyName,
+        subscription_status: 'trial',
+        subscription_plan: 'basic'
+      }])
+      .select()
+      .single();
+    
+    if (companyError) {
+      console.error('Erreur création entreprise:', companyError);
+      throw companyError;
+    }
+    
+    console.log('✅ Entreprise créée:', company.id);
+    
+    // 2. Créer le profil utilisateur
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([{
+        id: user.id,
+        company_id: company.id,
+        full_name: fullName,
+        email: user.email,
+        role: role
+      }]);
+    
+    if (profileError) {
+      console.error('Erreur création profil:', profileError);
+      throw profileError;
+    }
+    
+    console.log('✅ Profil créé pour l\'utilisateur');
+    
+    // 3. Initialiser l'entreprise avec les données par défaut
+    const { error: initError } = await supabase.rpc('initialize_company', {
+      company_uuid: company.id
+    });
+    
+    if (initError) {
+      console.error('Erreur initialisation entreprise:', initError);
+      // On continue même si l'initialisation échoue
+    } else {
+      console.log('✅ Entreprise initialisée avec les données par défaut');
+    }
+    
+    return { success: true, created: true, company };
+  } catch (error) {
+    console.error('Erreur lors de la vérification/création du profil:', error);
+    return { success: false, error };
+  }
+};
+
 export default function App() {
     // --- ÉTATS ---
     const [session, setSession] = useState(null);
@@ -49,8 +136,6 @@ export default function App() {
     const [kanbanStatuses, setKanbanStatuses] = useState([]); // Statuts kanban
     const [currentUserRole, setCurrentUserRole] = useState(null); // rôle de l'utilisateur
 
-    // Empêche de rappeler le RPC plusieurs fois pour la même session
-    const rpcCalledRef = useRef(false);
 
     const colors = { primary: '#2B5F4C', secondary: '#E1F2EC', accent: '#FFBB33', neutralDark: '#222222', neutralLight: '#F8F9FA', danger: '#E74C3C', success: '#2ECC71' };
 
@@ -64,11 +149,10 @@ export default function App() {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             setSession(session);
-            // Au premier SIGNED_IN, garantir la création/liaison company côté DB
-            if (event === 'SIGNED_IN' && session?.user?.id && !rpcCalledRef.current) {
-                rpcCalledRef.current = true;
-                const { error } = await supabase.rpc('create_my_company');
-                if (error) console.error('RPC create_my_company error (onAuthStateChange):', error);
+            // Au premier SIGNED_IN, vérifier et créer le profil si nécessaire
+            if (event === 'SIGNED_IN' && session?.user?.id) {
+                console.log('✅ Utilisateur connecté:', session.user.id);
+                await ensureUserHasProfile(session.user);
             }
         });
 
@@ -103,25 +187,10 @@ export default function App() {
 
                 let companyId = profile?.company_id;
 
-                // Filet de sécurité : si pas de company_id, on appelle le RPC puis on re-fetch le profil
+                // Si pas de company_id, c'est que le profil n'a pas été créé correctement
                 if (!companyId) {
-                    console.warn('Aucune société associée — tentative de création via RPC create_my_company');
-                    if (!rpcCalledRef.current) {
-                        rpcCalledRef.current = true;
-                        const { error: rpcError } = await supabase.rpc('create_my_company');
-                        if (rpcError) console.error('RPC create_my_company error (fetchData):', rpcError);
-                    }
-                    const retry = await supabase
-                        .from('profiles')
-                        .select('company_id, role')
-                        .eq('id', user.id)
-                        .single();
-                    if (!retry.error && retry.data?.company_id) {
-                        profile = retry.data;
-                        companyId = retry.data.company_id;
-                    } else {
-                        throw new Error('Aucune société associée à cet utilisateur (après tentative de bootstrap).');
-                    }
+                    console.error('❌ Aucune société associée à cet utilisateur');
+                    throw new Error('Profil utilisateur incomplet. Veuillez créer un nouveau compte ou contacter l\'administrateur.');
                 }
 
                 // Ensuite, charger les données en utilisant company_id

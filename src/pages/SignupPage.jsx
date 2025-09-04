@@ -2,6 +2,66 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
+// Fonction pour créer une entreprise et le profil utilisateur
+const createCompanyAndProfile = async (user, companyName, fullName) => {
+  try {
+    console.log('🏢 Création de l\'entreprise et du profil pour:', user.id);
+    
+    // 1. Créer l'entreprise
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .insert([{
+        name: companyName,
+        subscription_status: 'trial',
+        subscription_plan: 'basic'
+      }])
+      .select()
+      .single();
+    
+    if (companyError) {
+      console.error('Erreur création entreprise:', companyError);
+      throw companyError;
+    }
+    
+    console.log('✅ Entreprise créée:', company.id);
+    
+    // 2. Créer le profil utilisateur
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([{
+        id: user.id,
+        company_id: company.id,
+        full_name: fullName,
+        email: user.email,
+        role: 'admin'
+      }]);
+    
+    if (profileError) {
+      console.error('Erreur création profil:', profileError);
+      throw profileError;
+    }
+    
+    console.log('✅ Profil créé pour l\'utilisateur');
+    
+    // 3. Initialiser l'entreprise avec les données par défaut
+    const { error: initError } = await supabase.rpc('initialize_company', {
+      company_uuid: company.id
+    });
+    
+    if (initError) {
+      console.error('Erreur initialisation entreprise:', initError);
+      // On continue même si l'initialisation échoue
+    } else {
+      console.log('✅ Entreprise initialisée avec les données par défaut');
+    }
+    
+    return { success: true, company };
+  } catch (error) {
+    console.error('Erreur lors de la création:', error);
+    throw error;
+  }
+};
+
 const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
   const [companyName, setCompanyName] = useState('');
   const [isCompanyLocked, setIsCompanyLocked] = useState(false);
@@ -97,8 +157,7 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
 
       // Si la session existe immédiatement (email confirm OFF), on déclenche la création de la company
       if (authData?.session?.user) {
-        const { error: rpcError } = await supabase.rpc('create_my_company');
-        if (rpcError) console.error('RPC create_my_company error (signup immediate):', rpcError);
+        await createCompanyAndProfile(authData.session.user, cleanCompany, cleanName);
       }
 
       if (authData?.user) {
