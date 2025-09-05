@@ -211,9 +211,9 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
         throw authError;
       }
 
-      // Si la session existe immédiatement (email confirm OFF), on déclenche la création de la company
-      if (authData?.session?.user) {
-        const result = await createCompanyAndProfile(authData.session.user, cleanCompany, cleanName);
+      // Créer l'entreprise et le profil pour tout utilisateur créé avec succès
+      if (authData?.user) {
+        const result = await createCompanyAndProfile(authData.user, cleanCompany, cleanName);
         if (!result.success) {
           console.error('Erreur création entreprise/profil:', result.error);
           throw new Error(`Erreur lors de la création de l'entreprise: ${result.error.message || result.error}`);
