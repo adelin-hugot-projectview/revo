@@ -1,9 +1,10 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Building } from 'lucide-react';
 import StatusPill from './StatusPill.jsx'; // Import de la StatusPill globale
+import StatusSelector from '../StatusSelector.jsx';
 
 // --- COMPOSANT PRINCIPAL DE LA FICHE CLIENT (MODERNISÉ) ---
-const ClientDetail = ({ client, onSiteClick }) => {
+const ClientDetail = ({ client, onSiteClick, onUpdateSiteStatus, statusColumns = [], colors }) => {
     if (!client) return null;
 
     // Composant pour afficher une information de contact
@@ -54,7 +55,17 @@ const ClientDetail = ({ client, onSiteClick }) => {
                                             {new Date(site.startDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
                                         </p>
                                     </div>
-                                    <StatusPill status={site.status} />
+                                    {onUpdateSiteStatus ? (
+                                        <StatusSelector 
+                                            currentStatus={site.status} 
+                                            onStatusChange={(newStatusId) => onUpdateSiteStatus(site.id, newStatusId)} 
+                                            availableStatuses={statusColumns} 
+                                            colors={colors} 
+                                            showLabel={false} 
+                                        />
+                                    ) : (
+                                        <StatusPill status={site.status} />
+                                    )}
                                 </div>
                             </li>
                         ))

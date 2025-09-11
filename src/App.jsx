@@ -780,7 +780,7 @@ export default function App() {
     } else if (selectedClient) {
         const clientData = { ...selectedClient, sites: sites.filter(s => s.client_id === selectedClient.id) };
         panelHeader = <h2 className="text-xl font-bold">{clientData.name}</h2>;
-        panelContent = <ClientDetail client={clientData} onSiteClick={handleOpenSite} />;
+        panelContent = <ClientDetail client={clientData} onSiteClick={handleOpenSite} onUpdateSiteStatus={handleUpdateSiteStatus} statusColumns={kanbanStatuses} colors={colors} />;
         panelWidthClass = 'max-w-md';
     }
 
