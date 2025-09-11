@@ -774,7 +774,7 @@ export default function App() {
         const siteData = sites.find(s => s.id === selectedSite.id);
         if (siteData) {
             panelHeader = ( <div className="flex items-center justify-between w-full"> <h2 className="text-xl font-bold truncate pr-4">{siteData.name}</h2> <StatusSelector currentStatus={siteData.status} onStatusChange={(newStatusId) => handleUpdateSiteStatus(siteData.id, newStatusId)} availableStatuses={kanbanStatuses} colors={colors} showLabel={false} /> </div> );
-            panelContent = <SiteDetail site={siteData} onUpdateSite={(updates) => handleUpdateSite(siteData.id, updates)} teams={teams} checklistTemplates={checklistTemplates} colors={colors} />;
+            panelContent = <SiteDetail site={siteData} onUpdateSite={(updates) => handleUpdateSite(siteData.id, updates)} teams={teams} checklistTemplates={checklistTemplates} colors={colors} onUpdateSiteStatus={handleUpdateSiteStatus} statusColumns={kanbanStatuses} />;
             panelWidthClass = 'max-w-xl';
         }
     } else if (selectedClient) {

@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Edit3, Save, X } from 'lucide-react';
+import StatusSelector from '../StatusSelector.jsx';
 
 // --- FONCTION POUR CRÉER UNE ICÔNE DE CARTE PERSONNALISÉE ---
 const createCustomIcon = (color) => {
@@ -19,7 +20,7 @@ const InfoRow = ({ label, value, children }) => (
 );
 
 // --- COMPOSANT PRINCIPAL DE L'ONGLET INFO ---
-const SiteInfoTab = ({ site, teams, colors, onUpdateSite }) => {
+const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, statusColumns = [] }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
 
@@ -89,6 +90,21 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite }) => {
                 {!isEditing ? (
                     <div className="grid grid-cols-2 gap-x-4 gap-y-6">
                         <InfoRow label="Équipe" value={site.team?.name} />
+                        <InfoRow label="Statut">
+                            {onUpdateSiteStatus ? (
+                                <StatusSelector 
+                                    currentStatus={site.status} 
+                                    onStatusChange={(newStatusId) => onUpdateSiteStatus(site.id, newStatusId)} 
+                                    availableStatuses={statusColumns} 
+                                    colors={colors} 
+                                    showLabel={false} 
+                                />
+                            ) : (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{backgroundColor: site.status?.color || '#A9A9A9', color: '#ffffff'}}>
+                                    {site.status?.name || 'Aucun statut'}
+                                </span>
+                            )}
+                        </InfoRow>
                         <InfoRow label="Date de début" value={new Date(site.startDate).toLocaleDateString('fr-FR')} />
                         <InfoRow label="Date de fin" value={new Date(site.endDate).toLocaleDateString('fr-FR')} />
                         <InfoRow label="Horaires" value={`${site.startTime} - ${site.endTime}`} />

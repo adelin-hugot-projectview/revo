@@ -4,7 +4,7 @@ import SiteInfoTab from './SiteInfoTab.jsx';
 import PhotosTab from './PhotosTab.jsx';
 import ChecklistTab from './ChecklistTab.jsx';
 
-const SiteDetail = ({ site, onUpdateSite, teams, checklistTemplates, colors }) => {
+const SiteDetail = ({ site, onUpdateSite, teams, checklistTemplates, colors, onUpdateSiteStatus, statusColumns }) => {
     const [activeTab, setActiveTab] = useState('info');
 
     const TabButton = ({ tabName, icon, label }) => (
@@ -24,7 +24,7 @@ const SiteDetail = ({ site, onUpdateSite, teams, checklistTemplates, colors }) =
     const renderTabContent = () => {
         switch (activeTab) {
             case 'info':
-                return <SiteInfoTab site={site} teams={teams} colors={colors} onUpdateSite={onUpdateSite} />;
+                return <SiteInfoTab site={site} teams={teams} colors={colors} onUpdateSite={onUpdateSite} onUpdateSiteStatus={onUpdateSiteStatus} statusColumns={statusColumns} />;
             case 'photos':
                 return <PhotosTab site={site} colors={colors} onUpdateSite={onUpdateSite} />;
             case 'checklist':
