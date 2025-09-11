@@ -234,41 +234,35 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
         setFeedback('');
 
         try {
-            // Créer l'utilisateur avec signUp simplifié
-            const { data: authData, error: authError } = await supabase.auth.signUp({
+            // Créer une invitation en attente au lieu de créer directement l'utilisateur
+            const inviteData = {
                 email: newInviteUserData.email,
-                password: Math.random().toString(36).slice(-8) + 'A1!', // Mot de passe temporaire
-            });
+                role: newInviteUserData.role,
+                team_id: newInviteUserData.role === 'Technicien' ? newInviteUserData.team_id : null,
+                company_id: companyInfo.id,
+                invited_by: (await supabase.auth.getUser()).data.user?.id,
+                status: 'pending',
+                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 jours
+            };
 
-            if (authError) {
-                throw new Error(authError.message);
-            }
+            const { error: inviteError } = await supabase
+                .from('user_invitations')
+                .insert(inviteData);
 
-            // Si l'utilisateur a été créé, créer aussi son profil
-            if (authData.user) {
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .insert({
-                        id: authData.user.id,
-                        company_id: companyInfo.id,
-                        team_id: newInviteUserData.role === 'Technicien' ? newInviteUserData.team_id : null,
-                        full_name: newInviteUserData.email.split('@')[0],
-                        email: newInviteUserData.email,
-                        role: newInviteUserData.role,
-                        is_active: true
-                    });
-
-                if (profileError) {
-                    console.error('Erreur lors de la création du profil:', profileError);
-                    // Le profil sera créé via le trigger si configuré
+            if (inviteError) {
+                if (inviteError.code === '23505') { // Duplicate email
+                    throw new Error('Un utilisateur avec cet email a déjà été invité.');
                 }
+                throw new Error(`Erreur lors de l'invitation: ${inviteError.message}`);
             }
 
-            setFeedback('Invitation envoyée avec succès ! L\'utilisateur recevra un email de confirmation.');
+            // Générer un lien d'inscription personnalisé
+            const signupUrl = `${window.location.origin}/signup?email=${encodeURIComponent(newInviteUserData.email)}&company=${companyInfo.id}&role=${newInviteUserData.role}&team=${newInviteUserData.team_id || ''}`;
+            
+            setFeedback(`Invitation créée ! Envoyez ce lien à l'utilisateur: ${signupUrl}`);
             setNewInviteUserData({ email: '', role: 'Technicien', team_id: null });
             setShowInviteUserModal(false);
-            fetchUsers(companyInfo.id); // Refresh user list
-            setTimeout(() => setFeedback(''), 3000);
+            setTimeout(() => setFeedback(''), 10000); // Plus long pour laisser le temps de copier le lien
         } catch (error) {
             setFeedback(`Erreur: ${error.message}`);
         } finally {
