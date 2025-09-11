@@ -581,6 +581,71 @@ export default function App() {
             setSites(formattedSites);
         }
     };
+
+    const handleUpdateSiteStatus = async (siteId, newStatusId) => {
+        console.log('🔄 Changement de statut:', { siteId, newStatusId });
+        
+        try {
+            // Vérifier que le statut existe et appartient à l'entreprise
+            const targetStatus = kanbanStatuses.find(status => status.id === newStatusId);
+            if (!targetStatus) {
+                console.error('❌ Statut introuvable:', newStatusId);
+                alert('Statut introuvable');
+                return;
+            }
+
+            // Mise à jour optimiste de l'interface
+            const updatedSites = sites.map(site => {
+                if (site.id === siteId) {
+                    return { ...site, status: targetStatus, status_id: newStatusId };
+                }
+                return site;
+            });
+            setSites(updatedSites);
+
+            // Mise à jour du site sélectionné si c'est celui qui change
+            if (selectedSite && selectedSite.id === siteId) {
+                setSelectedSite(prev => ({ ...prev, status: targetStatus, status_id: newStatusId }));
+            }
+
+            // Mise à jour en base de données
+            const { data, error } = await supabase
+                .from('sites')
+                .update({ status_id: newStatusId })
+                .eq('id', siteId)
+                .select('id, status_id, status:kanban_statuses(id, name, color, position)')
+                .single();
+
+            if (error) {
+                console.error('❌ Erreur changement statut:', error);
+                
+                // Rollback en cas d'erreur
+                const originalSites = sites.map(site => {
+                    if (site.id === siteId) {
+                        const originalStatus = kanbanStatuses.find(s => s.id === site.status_id) || site.status;
+                        return { ...site, status: originalStatus, status_id: site.status_id };
+                    }
+                    return site;
+                });
+                setSites(originalSites);
+                
+                if (selectedSite && selectedSite.id === siteId) {
+                    setSelectedSite(prev => {
+                        const originalStatus = kanbanStatuses.find(s => s.id === prev.status_id) || prev.status;
+                        return { ...prev, status: originalStatus };
+                    });
+                }
+                
+                alert(`Erreur lors du changement de statut: ${error.message}`);
+            } else {
+                console.log('✅ Statut mis à jour avec succès');
+            }
+
+        } catch (err) {
+            console.error('❌ Exception changement statut:', err);
+            alert('Une erreur inattendue s\'est produite');
+        }
+    };
     
     const handleSaveStatusColumns = async (updatedStatuses) => {
         const upserts = updatedStatuses.map((status, index) => ({
@@ -681,7 +746,7 @@ export default function App() {
     const isPanelOpen = !!(selectedSite || selectedClient);
     
     const renderActivePage = () => {
-        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanStatuses, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalOpen(true), onUpdateSite: handleUpdateSite, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
+        const pageProps = { sites, clients, teams, todos, colors, statusColumns: kanbanStatuses, onSiteClick: handleOpenSite, onClientClick: handleOpenClient, onAddSite: () => setIsSiteModalOpen(true), onAddClient: () => setIsClientModalOpen(true), onUpdateSite: handleUpdateSite, onUpdateSiteStatus: handleUpdateSiteStatus, onUpdateSiteOrder: handleUpdateSiteOrder, onOpenStatusModal: () => setIsStatusModalOpen(true) };
         switch (activePage) {
             case 'Dashboard': return <Dashboard {...pageProps} todos={todos} newTodoText={setNewTodoText ? newTodoText : ''} setNewTodoText={setNewTodoText} onAddTodo={handleAddTodo} onToggleTodo={handleToggleTodo} onDeleteTodo={handleDeleteTodo} />;
             case 'Chantiers': return <SitesListPage {...pageProps} />;
@@ -705,7 +770,7 @@ export default function App() {
     if (selectedSite) {
         const siteData = sites.find(s => s.id === selectedSite.id);
         if (siteData) {
-            panelHeader = ( <div className="flex items-center justify-between w-full"> <h2 className="text-xl font-bold truncate pr-4">{siteData.name}</h2> <StatusBadge currentStatus={siteData.status} onStatusChange={(newStatusId) => handleUpdateSite(siteData.id, { status_id: newStatusId })} availableStatuses={kanbanStatuses} colors={colors} /> </div> );
+            panelHeader = ( <div className="flex items-center justify-between w-full"> <h2 className="text-xl font-bold truncate pr-4">{siteData.name}</h2> <StatusBadge currentStatus={siteData.status} onStatusChange={(newStatusId) => handleUpdateSiteStatus(siteData.id, newStatusId)} availableStatuses={kanbanStatuses} colors={colors} /> </div> );
             panelContent = <SiteDetail site={siteData} onUpdateSite={(updates) => handleUpdateSite(siteData.id, updates)} teams={teams} checklistTemplates={checklistTemplates} colors={colors} />;
             panelWidthClass = 'max-w-xl';
         }

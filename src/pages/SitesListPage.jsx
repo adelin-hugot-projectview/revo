@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { Search, Info, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Plus } from 'lucide-react';
 import DateRangePicker from '../components/DateRangePicker.jsx';
 import StatusPill from '../components/details/StatusPill.jsx';
+import StatusSelector from '../components/StatusSelector.jsx';
 
-const SitesListPage = ({ sites, teams = [], colors, statusColumns = [], onSiteClick, onAddSite, onClientClick }) => {
+const SitesListPage = ({ sites, teams = [], colors, statusColumns = [], onSiteClick, onAddSite, onClientClick, onUpdateSiteStatus }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState(''); // Filtrera par ID de statut
     const [teamFilter, setTeamFilter] = useState('');
@@ -77,7 +78,19 @@ const SitesListPage = ({ sites, teams = [], colors, statusColumns = [], onSiteCl
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{new Date(site.startDate).toLocaleDateString('fr-FR')} - {new Date(site.endDate).toLocaleDateString('fr-FR')}</td>
-                                <td className="px-6 py-4 whitespace-nowrap"><StatusPill status={site.status} /></td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    {onUpdateSiteStatus ? (
+                                        <StatusSelector 
+                                            currentStatus={site.status} 
+                                            onStatusChange={(newStatusId) => onUpdateSiteStatus(site.id, newStatusId)} 
+                                            availableStatuses={statusColumns} 
+                                            colors={colors} 
+                                            showLabel={false} 
+                                        />
+                                    ) : (
+                                        <StatusPill status={site.status} />
+                                    )}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button onClick={() => onSiteClick(site)} className="flex items-center gap-2 text-white p-2 rounded-md text-xs" style={{backgroundColor: colors.primary}}><Info size={14}/>Infos Chantier</button>
                                 </td>
