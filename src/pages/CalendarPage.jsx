@@ -44,7 +44,7 @@ const MonthCalendar = ({ year, month, sites, colors, onDayClick }) => {
         const day = new Date(date);
         const dayStr = day.toDateString();
         const isToday = dayStr === new Date().toDateString();
-        const eventsOnDay = sites.filter(s => new Date(s.start_date).toDateString() === dayStr);
+        const eventsOnDay = sites.filter(s => new Date(s.startDate).toDateString() === dayStr);
         const uniqueStatuses = [...new Set(eventsOnDay.map(e => e.status))];
         let dayClasses = "text-center text-xs p-1 rounded-full w-6 h-6 flex items-center justify-center transition-colors";
         if (isToday) { dayClasses += ' bg-primary text-white'; }
@@ -85,7 +85,7 @@ const MonthView = ({ currentDate, sites, colors, onSiteClick }) => {
     for (let i = 0; i < monthStartDay; i++) { days.push(<div key={`empty-start-${i}`} className="border-r border-b"></div>); }
     while (date.getMonth() === currentDate.getMonth()) {
         const day = new Date(date);
-        const eventsOnDay = sites.filter(s => new Date(s.start_date).toDateString() === day.toDateString());
+        const eventsOnDay = sites.filter(s => new Date(s.startDate).toDateString() === day.toDateString());
         days.push(
             <div key={day} className="border-r border-b p-2 min-h-[120px] cursor-pointer hover:bg-gray-50">
                 <p className="font-semibold">{day.getDate()}</p>
@@ -128,7 +128,7 @@ const TimeView = ({ days, sites, colors, onSiteClick }) => {
                     {days.map((day) => (
                         <div key={day.toISOString()} className="relative border-l">
                             {hours.map(hour => <div key={hour} className="h-[60px] border-t border-gray-200"><div className="h-1/2 border-b border-dashed border-gray-200"></div></div>)}
-                            {sites.filter(event => new Date(event.start_date).toDateString() === day.toDateString())
+                            {sites.filter(event => new Date(event.startDate).toDateString() === day.toDateString())
                                  .map(event => {
                                     const top = timeToMinutes(event.startTime) - (8 * 60);
                                     const height = timeToMinutes(event.endTime) - timeToMinutes(event.startTime);
@@ -152,7 +152,7 @@ const CalendarPage = ({ sites, colors, onSiteClick }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
     const handleDayClick = (day) => {
-        const sitesOnDay = sites.filter(site => new Date(site.start_date).toDateString() === day.toDateString());
+        const sitesOnDay = sites.filter(site => new Date(site.startDate).toDateString() === day.toDateString());
         if (sitesOnDay.length === 1) onSiteClick(sitesOnDay[0]);
     };
 

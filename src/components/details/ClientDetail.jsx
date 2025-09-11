@@ -51,7 +51,7 @@ const ClientDetail = ({ client, onSiteClick }) => {
                                     <div>
                                         <p className="font-bold text-gray-900">{site.name}</p>
                                         <p className="text-sm text-gray-500 mt-1">
-                                            {new Date(site.start_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                            {new Date(site.startDate).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
                                         </p>
                                     </div>
                                     <StatusPill status={site.status} />

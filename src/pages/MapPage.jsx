@@ -42,7 +42,7 @@ const MapPage = ({ sites, teams = [], statusColumns = [], colors, onSiteClick, o
     const filteredSites = useMemo(() => sites.filter(site => {
         if (typeof site.latitude !== 'number' || typeof site.longitude !== 'number') return false;
         
-        const siteDate = new Date(site.start_date);
+        const siteDate = new Date(site.startDate);
         const start = dateRange.start;
         const end = dateRange.end;
         if(start) start.setHours(0,0,0,0);
