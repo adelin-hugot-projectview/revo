@@ -214,25 +214,19 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
         setFeedback('');
 
         try {
-            const response = await fetch('http://localhost:5001/invite-user', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: newInviteUserData.email,
-                    role: newInviteUserData.role,
-                    team_id: newInviteUserData.team_id,
-                    company_id: companyInfo.id,
-                }),
+            // Utiliser un RPC Supabase pour créer l'utilisateur avec les bonnes permissions
+            const { data, error } = await supabase.rpc('invite_user_to_company', {
+                user_email: newInviteUserData.email,
+                user_role: newInviteUserData.role,
+                user_team_id: newInviteUserData.role === 'Technicien' ? newInviteUserData.team_id : null,
+                inviter_company_id: companyInfo.id
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erreur lors de l\'invitation de l\'utilisateur.');
+            if (error) {
+                throw new Error(error.message);
             }
 
-            setFeedback('Invitation envoyée avec succès !');
+            setFeedback('Invitation envoyée avec succès ! L\'utilisateur recevra un email de confirmation.');
             setNewInviteUserData({ email: '', role: 'Technicien', team_id: null });
             setShowInviteUserModal(false);
             fetchUsers(companyInfo.id); // Refresh user list
