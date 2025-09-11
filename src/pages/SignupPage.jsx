@@ -41,16 +41,34 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
     console.log('🏢 Création de l\'entreprise et du profil pour:', user.id);
     
     // 1. Créer l'entreprise
-    // Utiliser le service role pour bypasser RLS lors du signup
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .insert([{
-        name: companyName,
-        subscription_status: 'trial',
-        subscription_plan: 'basic'
-      }])
-      .select()
+    // D'abord vérifier si l'utilisateur a déjà une entreprise
+    console.log('🔍 Vérification entreprise existante...');
+    const { data: existingUserProfile } = await supabase
+      .from('profiles')
+      .select('company_id, companies(*)')
+      .eq('id', user.id)
       .single();
+    
+    let company, companyError = null;
+    
+    if (existingUserProfile?.company_id) {
+      console.log('✅ Entreprise existante trouvée via profil:', existingUserProfile.company_id);
+      company = existingUserProfile.companies;
+    } else {
+      console.log('🏢 Création nouvelle entreprise...');
+      const result = await supabase
+        .from('companies')
+        .insert([{
+          name: companyName,
+          subscription_status: 'trial',
+          subscription_plan: 'basic'
+        }])
+        .select()
+        .single();
+        
+      company = result.data;
+      companyError = result.error;
+    }
     
     console.log('🔍 DEBUG - Company creation result:', { data: company, error: companyError });
     
@@ -73,26 +91,43 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
     
     console.log('✅ Entreprise créée:', company.id);
     
-    // 2. Créer le profil utilisateur
-    console.log('🔍 DEBUG - Profile creation data:', {
-      id: user.id,
-      company_id: company.id,
-      full_name: fullName,
-      email: user.email,
-      role: 'admin'
-    });
-    
-    const { data: profile, error: profileError } = await supabase
+    // 2. Vérifier si le profil existe déjà
+    console.log('🔍 Vérification profil existant pour:', user.id);
+    const { data: existingProfile } = await supabase
       .from('profiles')
-      .insert([{
+      .select('id')
+      .eq('id', user.id)
+      .single();
+    
+    let profile = existingProfile;
+    let profileError = null;
+    
+    if (existingProfile) {
+      console.log('✅ Profil existant trouvé, pas de création nécessaire');
+    } else {
+      console.log('🔍 DEBUG - Profile creation data:', {
         id: user.id,
         company_id: company.id,
         full_name: fullName,
         email: user.email,
         role: 'admin'
-      }])
-      .select()
-      .single();
+      });
+      
+      const result = await supabase
+        .from('profiles')
+        .insert([{
+          id: user.id,
+          company_id: company.id,
+          full_name: fullName,
+          email: user.email,
+          role: 'admin'
+        }])
+        .select()
+        .single();
+        
+      profile = result.data;
+      profileError = result.error;
+    }
     
     console.log('🔍 DEBUG - Profile creation result:', { data: profile, error: profileError });
     
