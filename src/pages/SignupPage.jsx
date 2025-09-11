@@ -68,7 +68,15 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
     console.log('✅ Entreprise créée:', company.id);
     
     // 2. Créer le profil utilisateur
-    const { error: profileError } = await supabase
+    console.log('🔍 DEBUG - Profile creation data:', {
+      id: user.id,
+      company_id: company.id,
+      full_name: fullName,
+      email: user.email,
+      role: 'admin'
+    });
+    
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .insert([{
         id: user.id,
@@ -76,7 +84,11 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
         full_name: fullName,
         email: user.email,
         role: 'admin'
-      }]);
+      }])
+      .select()
+      .single();
+    
+    console.log('🔍 DEBUG - Profile creation result:', { data: profile, error: profileError });
     
     if (profileError) {
       console.error('Erreur création profil:', profileError);
