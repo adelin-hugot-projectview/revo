@@ -23,6 +23,13 @@ const InfoRow = ({ label, value, children }) => (
 const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, statusColumns = [] }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
+    
+    console.log('🔍 SiteInfoTab props:', { 
+        siteId: site?.id, 
+        hasOnUpdateSiteStatus: !!onUpdateSiteStatus, 
+        statusColumnsLength: statusColumns.length,
+        currentStatus: site?.status 
+    });
 
     useEffect(() => {
         setFormData({
