@@ -250,7 +250,7 @@ export default function App() {
                     todosRes
                 ] = await Promise.all([
                     supabase.from('companies').select('*').eq('id', companyId).single(),
-                    supabase.from('sites').select('id, name, address, start_date, end_date, start_time, end_time, client_id, team_id, status_id, kanban_position, company_id, created_at, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)').eq('company_id', companyId),
+                    supabase.from('sites').select('id, name, address, start_date, end_date, start_time, end_time, client_id, team_id, status_id, kanban_position, company_id, created_at, created_by, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)').eq('company_id', companyId),
                     supabase.from('clients').select('*').eq('company_id', companyId),
                     supabase.from('teams').select('*').eq('company_id', companyId),
                     supabase.from('kanban_statuses').select('*').eq('company_id', companyId).order('position'),
@@ -438,7 +438,7 @@ export default function App() {
             const { data, error } = await supabase
                 .from('sites')
                 .insert([siteData])
-                .select('id, name, address, start_date, end_date, start_time, end_time, client_id, team_id, status_id, kanban_position, company_id, created_at, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)')
+                .select('id, name, address, start_date, end_date, start_time, end_time, client_id, team_id, status_id, kanban_position, company_id, created_at, created_by, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)')
                 .single();
 
             if (error) {
@@ -509,7 +509,7 @@ export default function App() {
             .from('sites')
             .update(cleanedUpdates)
             .eq('id', siteId)
-            .select('id, name, address, start_date, end_date, start_time, end_time, client_id, team_id, status_id, kanban_position, company_id, created_at, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)')
+            .select('id, name, address, start_date, end_date, start_time, end_time, client_id, team_id, status_id, kanban_position, company_id, created_at, created_by, client:clients(*), team:teams(id, name), status:kanban_statuses(id, name, color, position)')
             .single();
 
         if (error) {
@@ -558,7 +558,7 @@ export default function App() {
 
         await Promise.all(updatePromises);
 
-        const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('id, name, address, start_date, end_date, start_time, end_time, client_id, team_id, status_id, kanban_position, company_id, created_at, client:clients(name), team:teams(id, name), status:kanban_statuses(id, name, color, position)').order('kanban_position', { ascending: true });
+        const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('id, name, address, start_date, end_date, start_time, end_time, client_id, team_id, status_id, kanban_position, company_id, created_at, created_by, client:clients(name), team:teams(id, name), status:kanban_statuses(id, name, color, position)').order('kanban_position', { ascending: true });
         if (sitesError) {
             console.error('Erreur (re-fetch chantiers):', sitesError.message);
         } else {
