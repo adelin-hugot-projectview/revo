@@ -433,22 +433,20 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                         </div>
                     )}
                 </div>
-                {currentUserRole === 'Administrateur' && (
-                    <div className="flex space-x-4">
-                        <button
-                            onClick={() => setShowCreateTeamModal(true)}
-                            className="px-4 py-2 text-white font-semibold rounded-lg transition-colors bg-primary">
-                            Créer une nouvelle équipe
-                        </button>
-                        <button
-                            onClick={() => setShowInviteUserModal(true)}
-                            className="px-4 py-2 text-white font-semibold rounded-lg transition-colors"
-                            style={{ backgroundColor: colors.primary }}
-                        >
-                            Inviter un utilisateur
-                        </button>
-                    </div>
-                )}
+                <div className="flex space-x-4">
+                    <button
+                        onClick={() => setShowCreateTeamModal(true)}
+                        className="px-4 py-2 text-white font-semibold rounded-lg transition-colors bg-primary">
+                        Créer une nouvelle équipe
+                    </button>
+                    <button
+                        onClick={() => setShowInviteUserModal(true)}
+                        className="px-4 py-2 text-white font-semibold rounded-lg transition-colors"
+                        style={{ backgroundColor: colors.primary }}
+                    >
+                        Inviter un utilisateur
+                    </button>
+                </div>
                 {loadingUsers ? (
                     <div>Chargement des utilisateurs...</div>
                 ) : users.length === 0 ? (
@@ -464,7 +462,7 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                                         <p className="text-xs text-gray-400">Équipe: {user.team.name}</p>
                                     )}
                                 </div>
-                                {currentUserRole === 'Administrateur' && editingUser && editingUser.id === user.id ? (
+                                {editingUser && editingUser.id === user.id ? (
                                     <div className="flex items-center space-x-2">
                                         <select
                                             value={editingUser.role}
@@ -505,15 +503,13 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                                         <span className="px-3 py-1 text-sm font-medium rounded-full" style={{ backgroundColor: colors.secondary, color: colors.primary }}>
                                             {user.role}
                                         </span>
-                                        {currentUserRole === 'Administrateur' && (
-                                            <button
-                                                onClick={() => setEditingUser({ ...user })}
-                                                className="px-3 py-1 text-sm text-white rounded-lg"
-                                                style={{ backgroundColor: colors.primary }}
-                                            >
-                                                Modifier
-                                            </button>
-                                        )}
+                                        <button
+                                            onClick={() => setEditingUser({ ...user })}
+                                            className="px-3 py-1 text-sm text-white rounded-lg"
+                                            style={{ backgroundColor: colors.primary }}
+                                        >
+                                            Modifier
+                                        </button>
                                     </div>
                                 )}
                             </li>
