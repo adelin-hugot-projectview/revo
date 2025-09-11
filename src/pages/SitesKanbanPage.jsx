@@ -146,7 +146,7 @@ const KanbanColumn = ({ status, sites, onSiteClick, colors, moveSite, onDropColu
 };
 
 // Page principale de la vue Kanban
-const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAddSite, onOpenStatusModal, colors, onUpdateSiteOrder }) => {
+const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAddSite, onOpenStatusModal, colors, onUpdateSiteOrder, onUpdateSiteStatus }) => {
     const [localSites, setLocalSites] = useState(sites);
 
     // Synchroniser les sites locaux avec les props (quand les données changent depuis App.jsx)
@@ -155,51 +155,59 @@ const SitesKanbanPage = ({ sites, statusColumns, onUpdateSite, onSiteClick, onAd
     }, [sites]);
 
     const moveSite = (draggedId, newColumnId, dragIndex, hoverIndex) => {
-        // Simplification : on ne fait la mise à jour locale que si c'est un changement de colonne
-        // Les réorganisations dans la même colonne sont gérées par handleDropColumn
+        // Utiliser la nouvelle fonction dédiée au changement de statut
         const draggedSite = localSites.find(site => site.id === draggedId);
-        if (!draggedSite || draggedSite.status_id === newColumnId) {
+        if (!draggedSite) {
+            console.error('❌ Site non trouvé pour le drag & drop:', draggedId);
+            return;
+        }
+
+        if (draggedSite.status_id === newColumnId) {
             return; // Pas de changement de colonne, on ne fait rien
         }
 
-        setLocalSites((prevSites) => {
-            return prevSites.map(s => {
-                if (s.id === draggedId) {
-                    return { ...s, status_id: newColumnId, kanban_position: 0 };
-                }
-                return s;
-            });
+        console.log('🎯 Drag & Drop - Changement de statut:', {
+            siteId: draggedId,
+            fromStatus: draggedSite.status_id,
+            toStatus: newColumnId
         });
+
+        // Utiliser la fonction dédiée qui gère tout (optimistic updates, rollback, etc.)
+        if (onUpdateSiteStatus) {
+            onUpdateSiteStatus(draggedId, newColumnId);
+        } else {
+            console.error('❌ onUpdateSiteStatus non disponible pour le drag & drop');
+        }
     };
 
     const handleDropColumn = (siteId, newColumnId) => {
-        setLocalSites((prevSites) => {
-            const draggedSite = prevSites.find(site => site.id === siteId);
-            if (!draggedSite) return prevSites;
+        // Utiliser la nouvelle fonction dédiée au changement de statut
+        const draggedSite = localSites.find(site => site.id === siteId);
+        if (!draggedSite) {
+            console.error('❌ Site non trouvé pour le drop:', siteId);
+            return;
+        }
 
-            // Mettre à jour la colonne et la position (à la fin de la nouvelle colonne)
-            const newSites = prevSites.map(s => {
-                if (s.id === siteId) {
-                    return { ...s, status_id: newColumnId, kanban_position: sites.filter(s => s.status_id === newColumnId).length };
-                }
-                return s;
-            });
-            return newSites;
+        if (draggedSite.status_id === newColumnId) {
+            return; // Pas de changement de statut
+        }
+
+        console.log('📤 Drop - Changement de statut:', {
+            siteId,
+            fromStatus: draggedSite.status_id,
+            toStatus: newColumnId
         });
+
+        // Utiliser la fonction dédiée
+        if (onUpdateSiteStatus) {
+            onUpdateSiteStatus(siteId, newColumnId);
+        } else {
+            console.error('❌ onUpdateSiteStatus non disponible pour le drop');
+        }
     };
 
-    // Sauvegarder les changements lorsque localSites change (avec un debounce si nécessaire pour la performance)
-    React.useEffect(() => {
-        // Filtrer uniquement les sites qui ont changé de position ou de colonne
-        const changedSites = localSites.filter(localSite => {
-            const originalSite = sites.find(s => s.id === localSite.id);
-            return originalSite && (originalSite.kanban_position !== localSite.kanban_position || originalSite.status_id !== localSite.status_id);
-        }).map(s => ({ id: s.id, kanban_position: s.kanban_position, status_id: s.status_id }));
-
-        if (changedSites.length > 0) {
-            onUpdateSiteOrder(changedSites);
-        }
-    }, [localSites, onUpdateSiteOrder, sites]);
+    // Les changements sont maintenant gérés directement par handleUpdateSiteStatus
+    // Cet effect était responsable des erreurs created_by, il est maintenant désactivé
 
     const sortedStatusColumns = [...statusColumns].sort((a, b) => a.position - b.position);
 

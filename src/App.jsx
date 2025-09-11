@@ -9,7 +9,7 @@ import SiteDetail from './components/details/SiteDetail.jsx';
 import ClientDetail from './components/details/ClientDetail.jsx';
 import SiteCreationModal from './components/SiteCreationModal.jsx';
 import ClientCreationModal from './components/ClientCreationModal.jsx';
-import StatusBadge from './components/details/StatusBadge.jsx';
+import StatusPill from './components/details/StatusPill.jsx';
 import StatusManagementModal from './components/StatusManagementModal.jsx';
 
 import Dashboard from './pages/Dashboard.jsx';
@@ -399,6 +399,13 @@ export default function App() {
 
     const handleUpdateSite = async (siteId, updates) => {
         console.log('🔧 handleUpdateSite appelée:', { siteId, updates });
+        
+        // Rediriger les changements de statut vers la fonction dédiée
+        if (updates.status_id && siteId) {
+            console.log('🔄 Redirection vers handleUpdateSiteStatus pour changement de statut');
+            return handleUpdateSiteStatus(siteId, updates.status_id);
+        }
+        
         const originalSites = [...sites];
         const originalSelectedSite = selectedSite ? { ...selectedSite } : null;
 
@@ -466,13 +473,9 @@ export default function App() {
         // MISE À JOUR d'un site existant
         const updatedSites = sites.map(site => {
             if (site.id === siteId) {
-                const newStatus = updates.status_id
-                    ? kanbanStatuses.find(c => c.id === updates.status_id)
-                    : site.status;
                 return {
                     ...site,
                     ...updates,
-                    status: newStatus || site.status
                 };
             }
             return site;
@@ -488,8 +491,8 @@ export default function App() {
         // Construire manuellement l'objet avec seulement les champs valides
         const cleanedUpdates = {};
         
-        // Champs autorisés pour les sites
-        const allowedFields = ['name', 'description', 'address', 'latitude', 'longitude', 'start_date', 'end_date', 'start_time', 'end_time', 'status_id', 'client_id', 'team_id', 'assigned_to', 'estimated_amount', 'final_amount', 'currency', 'priority', 'kanban_position', 'internal_notes', 'client_notes'];
+        // Champs autorisés pour les sites (status_id est géré par handleUpdateSiteStatus)
+        const allowedFields = ['name', 'description', 'address', 'latitude', 'longitude', 'start_date', 'end_date', 'start_time', 'end_time', 'client_id', 'team_id', 'assigned_to', 'estimated_amount', 'final_amount', 'currency', 'priority', 'kanban_position', 'internal_notes', 'client_notes'];
         
         allowedFields.forEach(field => {
             if (field in updates) {
@@ -770,7 +773,7 @@ export default function App() {
     if (selectedSite) {
         const siteData = sites.find(s => s.id === selectedSite.id);
         if (siteData) {
-            panelHeader = ( <div className="flex items-center justify-between w-full"> <h2 className="text-xl font-bold truncate pr-4">{siteData.name}</h2> <StatusBadge currentStatus={siteData.status} onStatusChange={(newStatusId) => handleUpdateSiteStatus(siteData.id, newStatusId)} availableStatuses={kanbanStatuses} colors={colors} /> </div> );
+            panelHeader = ( <div className="flex items-center justify-between w-full"> <h2 className="text-xl font-bold truncate pr-4">{siteData.name}</h2> <StatusPill status={siteData.status} /> </div> );
             panelContent = <SiteDetail site={siteData} onUpdateSite={(updates) => handleUpdateSite(siteData.id, updates)} teams={teams} checklistTemplates={checklistTemplates} colors={colors} />;
             panelWidthClass = 'max-w-xl';
         }
