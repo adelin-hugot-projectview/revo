@@ -219,14 +219,17 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
         throw authError;
       }
 
-      // Créer l'entreprise et le profil pour tout utilisateur créé avec succès
-      if (authData?.user) {
+      // Si l'utilisateur est créé et confirmé immédiatement, créer l'entreprise
+      if (authData?.user && authData?.session) {
+        console.log('🔐 Utilisateur confirmé immédiatement, création de l\'entreprise...');
         const result = await createCompanyAndProfile(authData.user, cleanCompany, cleanName);
         if (!result.success) {
           console.error('Erreur création entreprise/profil:', result.error);
           throw new Error(`Erreur lors de la création de l'entreprise: ${result.error.message || result.error}`);
         }
         console.log('✅ Entreprise et profil créés avec succès');
+      } else {
+        console.log('⏳ Utilisateur créé mais en attente de confirmation par email');
       }
 
       if (authData?.user) {
