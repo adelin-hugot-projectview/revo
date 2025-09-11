@@ -4,6 +4,12 @@ import { ChevronDown } from 'lucide-react';
 const StatusSelector = ({ currentStatus, onStatusChange, availableStatuses = [], colors, showLabel = true }) => {
     const currentStatusId = currentStatus?.id || '';
 
+    console.log('🔍 StatusSelector - Debug:', {
+        currentStatus,
+        availableStatusesCount: availableStatuses.length,
+        availableStatuses: availableStatuses.map(s => ({ id: s.id, name: s.name }))
+    });
+
     const handleSelectChange = (e) => {
         console.log('📋 StatusSelector - Changement de statut:', {
             from: currentStatusId,
@@ -25,12 +31,13 @@ const StatusSelector = ({ currentStatus, onStatusChange, availableStatuses = [],
                 <select
                     value={currentStatusId}
                     onChange={handleSelectChange}
-                    className="appearance-none text-sm font-medium rounded-lg py-2 pl-3 pr-8 cursor-pointer border focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    className="appearance-none text-sm font-medium rounded-lg py-2 pl-3 pr-8 cursor-pointer border focus:outline-none focus:ring-2 focus:ring-offset-2 hover:shadow-md transition-shadow"
                     style={{ 
                         ...badgeStyle, 
                         border: `2px solid ${currentStatus?.color || '#A9A9A9'}`,
                         focusRingColor: colors.primary 
                     }}
+                    title="Cliquez pour changer le statut"
                 >
                     {availableStatuses.map(status => (
                         <option 
