@@ -41,6 +41,7 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
     console.log('🏢 Création de l\'entreprise et du profil pour:', user.id);
     
     // 1. Créer l'entreprise
+    // Utiliser le service role pour bypasser RLS lors du signup
     const { data: company, error: companyError } = await supabase
       .from('companies')
       .insert([{
@@ -219,17 +220,14 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
         throw authError;
       }
 
-      // Si l'utilisateur est créé et confirmé immédiatement, créer l'entreprise
-      if (authData?.user && authData?.session) {
-        console.log('🔐 Utilisateur confirmé immédiatement, création de l\'entreprise...');
+      // Créer l'entreprise et le profil pour tout utilisateur créé avec succès
+      if (authData?.user) {
         const result = await createCompanyAndProfile(authData.user, cleanCompany, cleanName);
         if (!result.success) {
           console.error('Erreur création entreprise/profil:', result.error);
           throw new Error(`Erreur lors de la création de l'entreprise: ${result.error.message || result.error}`);
         }
         console.log('✅ Entreprise et profil créés avec succès');
-      } else {
-        console.log('⏳ Utilisateur créé mais en attente de confirmation par email');
       }
 
       if (authData?.user) {
