@@ -256,38 +256,26 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                 throw new Error(`Erreur lors de l'invitation: ${inviteError.message}`);
             }
 
-            // Générer un lien d'inscription personnalisé
-            const signupUrl = `${window.location.origin}/signup?email=${encodeURIComponent(newInviteUserData.email)}&company=${companyInfo.id}&role=${newInviteUserData.role}&team=${newInviteUserData.team_id || ''}`;
-            
-            // Envoyer le lien via webhook N8N pour envoi d'email
-            try {
-                const webhookResponse = await fetch(process.env.REACT_APP_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/invitation', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: newInviteUserData.email,
-                        role: newInviteUserData.role,
-                        team_name: newInviteUserData.team_id ? teams.find(t => t.id === newInviteUserData.team_id)?.name : null,
-                        company_name: companyInfo.name,
-                        signup_url: signupUrl,
-                        inviter_name: (await supabase.auth.getUser()).data.user?.email?.split('@')[0] || 'Un collègue'
-                    })
-                });
-
-                if (!webhookResponse.ok) {
-                    console.warn('Webhook failed, but invitation was created');
+            // Appeler la Edge Function Supabase pour envoyer l'invitation par email
+            const { data: edgeResponse, error: edgeError } = await supabase.functions.invoke('invite-user', {
+                body: {
+                    email: newInviteUserData.email,
+                    role: newInviteUserData.role,
+                    team_id: newInviteUserData.team_id,
+                    team_name: newInviteUserData.team_id ? teams.find(t => t.id === newInviteUserData.team_id)?.name : null,
+                    company_id: companyInfo.id,
+                    company_name: companyInfo.name,
+                    inviter_name: (await supabase.auth.getUser()).data.user?.email?.split('@')[0] || 'Un collègue',
+                    signup_url: `${window.location.origin}/signup?email=${encodeURIComponent(newInviteUserData.email)}&company=${companyInfo.id}&role=${newInviteUserData.role}&team=${newInviteUserData.team_id || ''}`
                 }
+            });
 
-                setFeedback('Invitation envoyée avec succès ! L\'utilisateur va recevoir un email avec le lien d\'inscription.');
-            } catch (webhookError) {
-                console.error('Erreur webhook:', webhookError);
-                // En cas d'échec du webhook, on affiche quand même le lien
-                setFeedback(`Invitation créée ! Lien d'inscription: ${signupUrl}`);
-                setTimeout(() => setFeedback(''), 10000);
+            if (edgeError) {
+                console.error('Erreur Edge Function:', edgeError);
+                throw new Error('Erreur lors de l\'envoi de l\'invitation par email');
             }
 
+            setFeedback('Invitation envoyée avec succès ! L\'utilisateur va recevoir un email avec les instructions.');
             setNewInviteUserData({ email: '', role: 'Technicien', team_id: null });
             setShowInviteUserModal(false);
             setTimeout(() => setFeedback(''), 5000);
