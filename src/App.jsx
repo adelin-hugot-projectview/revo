@@ -9,7 +9,8 @@ import SiteDetail from './components/details/SiteDetail.jsx';
 import ClientDetail from './components/details/ClientDetail.jsx';
 import SiteCreationModal from './components/SiteCreationModal.jsx';
 import ClientCreationModal from './components/ClientCreationModal.jsx';
-import StatusPill from './components/details/StatusPill.jsx';\nimport StatusSelector from './components/StatusSelector.jsx';
+import StatusPill from './components/details/StatusPill.jsx';
+import StatusSelector from './components/StatusSelector.jsx';
 import StatusManagementModal from './components/StatusManagementModal.jsx';
 
 import Dashboard from './pages/Dashboard.jsx';
