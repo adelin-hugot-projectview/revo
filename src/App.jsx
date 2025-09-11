@@ -343,6 +343,8 @@ export default function App() {
                 console.log('🔍 Récupération company_id depuis le profil...');
                 const { data: { user } } = await supabase.auth.getUser();
                 
+                console.log('👤 User authentifié:', user?.id);
+                
                 if (user) {
                     const { data: profile, error: profileError } = await supabase
                         .from('profiles')
@@ -350,7 +352,11 @@ export default function App() {
                         .eq('id', user.id)
                         .single();
                     
+                    console.log('📋 Résultat requête profil:', { profile, profileError });
+                    
                     if (profileError || !profile) {
+                        console.error('❌ Erreur profil:', profileError);
+                        console.error('❌ User ID recherché:', user.id);
                         throw new Error('Aucun profil trouvé. Veuillez vous reconnecter ou contacter l\'administrateur.');
                     }
                     
