@@ -259,10 +259,38 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
             // Générer un lien d'inscription personnalisé
             const signupUrl = `${window.location.origin}/signup?email=${encodeURIComponent(newInviteUserData.email)}&company=${companyInfo.id}&role=${newInviteUserData.role}&team=${newInviteUserData.team_id || ''}`;
             
-            setFeedback(`Invitation créée ! Envoyez ce lien à l'utilisateur: ${signupUrl}`);
+            // Envoyer le lien via webhook N8N pour envoi d'email
+            try {
+                const webhookResponse = await fetch(process.env.REACT_APP_N8N_WEBHOOK_URL || 'https://your-n8n-instance.com/webhook/invitation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: newInviteUserData.email,
+                        role: newInviteUserData.role,
+                        team_name: newInviteUserData.team_id ? teams.find(t => t.id === newInviteUserData.team_id)?.name : null,
+                        company_name: companyInfo.name,
+                        signup_url: signupUrl,
+                        inviter_name: (await supabase.auth.getUser()).data.user?.email?.split('@')[0] || 'Un collègue'
+                    })
+                });
+
+                if (!webhookResponse.ok) {
+                    console.warn('Webhook failed, but invitation was created');
+                }
+
+                setFeedback('Invitation envoyée avec succès ! L\'utilisateur va recevoir un email avec le lien d\'inscription.');
+            } catch (webhookError) {
+                console.error('Erreur webhook:', webhookError);
+                // En cas d'échec du webhook, on affiche quand même le lien
+                setFeedback(`Invitation créée ! Lien d'inscription: ${signupUrl}`);
+                setTimeout(() => setFeedback(''), 10000);
+            }
+
             setNewInviteUserData({ email: '', role: 'Technicien', team_id: null });
             setShowInviteUserModal(false);
-            setTimeout(() => setFeedback(''), 10000); // Plus long pour laisser le temps de copier le lien
+            setTimeout(() => setFeedback(''), 5000);
         } catch (error) {
             setFeedback(`Erreur: ${error.message}`);
         } finally {
