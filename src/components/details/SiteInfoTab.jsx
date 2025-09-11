@@ -34,6 +34,7 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
     useEffect(() => {
         setFormData({
             team_id: site.team?.id || '',
+            status_id: site.status?.id || '',
             start_date: site.startDate ? site.startDate.split('T')[0] : '',
             end_date: site.endDate ? site.endDate.split('T')[0] : '',
             start_time: site.startTime || '09:00',
@@ -53,6 +54,7 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
             // CORRECTION: Logique de comparaison robuste
             switch (key) {
                 case 'team_id':    initialValue = site.team?.id || ''; break;
+                case 'status_id':  initialValue = site.status?.id || ''; break;
                 case 'start_time': initialValue = site.startTime || '09:00'; break;
                 case 'end_time':   initialValue = site.endTime || '17:00'; break;
                 case 'start_date': initialValue = site.startDate ? site.startDate.split('T')[0] : ''; break;
@@ -123,6 +125,21 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
                             <select name="team_id" value={formData.team_id} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
                                 <option value="">Aucune équipe</option>
                                 {teams && teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+                            </select>
+                        </InfoRow>
+                        <InfoRow label="Statut">
+                            <select 
+                                name="status_id" 
+                                value={formData.status_id} 
+                                onChange={handleInputChange} 
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                            >
+                                <option value="">Sélectionner un statut</option>
+                                {statusColumns?.filter(status => !status.is_archived).map(status => (
+                                    <option key={status.id} value={status.id}>
+                                        {status.name}
+                                    </option>
+                                ))}
                             </select>
                         </InfoRow>
                         <div className="col-span-2 grid grid-cols-2 gap-2">

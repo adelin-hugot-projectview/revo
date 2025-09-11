@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { X, Plus } from 'lucide-react';
 
-const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, checklistTemplates, colors, onAddClient }) => {
+const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, checklistTemplates, colors, onAddClient, availableStatuses }) => {
     // On s'assure que tous les champs sont présents dans l'état initial
     const initialFormState = {
         name: '',
         client_id: '',
+        status_id: '',
         startDate: '',
         endDate: '',
         startTime: '09:00',
@@ -20,9 +21,17 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
     // Réinitialise le formulaire quand la modale s'ouvre
     useEffect(() => {
         if (isOpen) {
-            setFormData(initialFormState);
+            // Définir le statut par défaut
+            const defaultStatus = availableStatuses?.find(s => s.is_default) || 
+                                  availableStatuses?.find(s => s.position === 0) || 
+                                  availableStatuses?.[0];
+            
+            setFormData({
+                ...initialFormState,
+                status_id: defaultStatus?.id || ''
+            });
         }
-    }, [isOpen]);
+    }, [isOpen, availableStatuses]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -138,6 +147,26 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
                             <option value="">Aucune</option>
                             {/* Note: Ceci nécessite que la prop 'teams' soit un tableau d'objets [{id, name}, ...] */}
                             {teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+                        </select>
+                    </div>
+
+                    {/* --- STATUT --- */}
+                    <div>
+                        <label htmlFor="status_id" className="block text-sm font-medium text-gray-700">Statut initial</label>
+                        <select 
+                            name="status_id" 
+                            id="status_id" 
+                            value={formData.status_id} 
+                            onChange={handleChange} 
+                            required
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                        >
+                            <option value="">Sélectionner un statut</option>
+                            {availableStatuses?.filter(status => !status.is_archived).map(status => (
+                                <option key={status.id} value={status.id}>
+                                    {status.name}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
