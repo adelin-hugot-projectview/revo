@@ -7,6 +7,25 @@ const createDefaultStatuses = async (companyId) => {
   try {
     console.log('📊 Création des statuts par défaut pour l\'entreprise:', companyId);
     
+    // Vérifier si des statuts existent déjà pour cette entreprise
+    const { data: existingStatuses, error: checkError } = await supabase
+      .from('kanban_statuses')
+      .select('id')
+      .eq('company_id', companyId)
+      .limit(1);
+    
+    if (checkError) {
+      console.error('Erreur vérification statuts existants:', checkError);
+      return;
+    }
+    
+    if (existingStatuses && existingStatuses.length > 0) {
+      console.log('✅ Statuts déjà existants pour cette entreprise, pas de création');
+      return;
+    }
+    
+    console.log('🆕 Aucun statut existant, création des statuts par défaut...');
+    
     const defaultStatuses = [
       { name: 'À planifier', color: '#6B7280', position: 1, is_default: true },
       { name: 'En cours', color: '#F59E0B', position: 2 },
@@ -28,7 +47,7 @@ const createDefaultStatuses = async (companyId) => {
     if (error) {
       console.error('Erreur création statuts par défaut:', error);
     } else {
-      console.log('✅ Statuts par défaut créés');
+      console.log('✅ Statuts par défaut créés avec succès');
     }
   } catch (error) {
     console.error('Erreur lors de la création des statuts:', error);
@@ -147,19 +166,21 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
     
     // 3. Initialiser l'entreprise avec les données par défaut (optionnel)
     try {
+      console.log('🔧 Tentative d\'initialisation via RPC initialize_company...');
       const { error: initError } = await supabase.rpc('initialize_company', {
         company_uuid: company.id
       });
       
       if (initError) {
-        console.warn('⚠️ Initialisation entreprise échouée (fonction RPC non disponible):', initError.message);
-        // Créer manuellement les statuts par défaut
+        console.warn('⚠️ RPC initialize_company échoué:', initError.message);
+        console.log('🔄 Fallback: création manuelle des statuts...');
         await createDefaultStatuses(company.id);
       } else {
-        console.log('✅ Entreprise initialisée avec les données par défaut via RPC');
+        console.log('✅ RPC initialize_company réussi - statuts créés via RPC');
       }
     } catch (error) {
-      console.warn('⚠️ RPC initialize_company non disponible, création manuelle des données par défaut');
+      console.warn('⚠️ RPC initialize_company non disponible, création manuelle:', error.message);
+      console.log('🔄 Fallback: création manuelle des statuts...');
       await createDefaultStatuses(company.id);
     }
     
