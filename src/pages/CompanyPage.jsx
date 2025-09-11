@@ -101,7 +101,14 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
         setLoadingUsers(true);
         const { data, error } = await supabase
             .from('profiles')
-            .select('id, full_name, role, team_id, email, team:teams(name)')
+            .select(`
+                id, 
+                full_name, 
+                role, 
+                team_id, 
+                email,
+                teams!profiles_team_id_fkey(name)
+            `)
             .eq('company_id', companyId);
 
         if (error) {
@@ -452,8 +459,8 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                                 <div>
                                     <p className="text-lg font-semibold text-gray-900">{user.full_name}</p>
                                     <p className="text-sm text-gray-500">{user.email}</p>
-                                    {user.role === 'Technicien' && user.team?.name && (
-                                        <p className="text-xs text-gray-400">Équipe: {user.team.name}</p>
+                                    {user.role === 'Technicien' && user.teams?.name && (
+                                        <p className="text-xs text-gray-400">Équipe: {user.teams.name}</p>
                                     )}
                                 </div>
                                 {editingUser && editingUser.id === user.id ? (
