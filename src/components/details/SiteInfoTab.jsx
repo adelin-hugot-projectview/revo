@@ -77,7 +77,7 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
         <div className="space-y-6">
             <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-700">Informations générales</h3>
+                    <h3 className="text-lg font-semibold text-red-600">🔧 TEST - Informations générales - MODIFIÉ</h3>
                     {!isEditing ? (
                         <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-semibold p-2 rounded-lg hover:bg-blue-100">
                             <Edit3 size={16} /> Modifier
