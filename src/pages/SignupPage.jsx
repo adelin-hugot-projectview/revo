@@ -59,7 +59,8 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
       
       // Vérifier si on a quand même des données (succès partiel)
       if (company && company.id) {
-        console.warn('⚠️ Warning: Erreur signalée mais entreprise créée avec succès:', company.id);
+        console.warn('⚠️ Warning: Erreur RLS signalée mais entreprise créée avec succès:', company.id);
+        // Ne pas throw, continuer le processus
       } else {
         throw companyError;
       }
@@ -92,7 +93,14 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
     
     if (profileError) {
       console.error('Erreur création profil:', profileError);
-      throw profileError;
+      
+      // Vérifier si on a quand même des données (succès partiel)
+      if (profile && profile.id) {
+        console.warn('⚠️ Warning: Erreur RLS signalée mais profil créé avec succès:', profile.id);
+        // Ne pas throw, continuer le processus
+      } else {
+        throw profileError;
+      }
     }
     
     console.log('✅ Profil créé pour l\'utilisateur');
