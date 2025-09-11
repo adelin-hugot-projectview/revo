@@ -234,16 +234,43 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
         setFeedback('');
 
         try {
-            // Utiliser un RPC Supabase pour créer l'utilisateur avec les bonnes permissions
-            const { data, error } = await supabase.rpc('invite_user_to_company', {
-                user_email: newInviteUserData.email,
-                user_role: newInviteUserData.role,
-                user_team_id: newInviteUserData.role === 'Technicien' ? newInviteUserData.team_id : null,
-                inviter_company_id: companyInfo.id
+            // Créer l'utilisateur directement avec Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email: newInviteUserData.email,
+                password: Math.random().toString(36).slice(-8) + 'A1!', // Mot de passe temporaire
+                options: {
+                    emailRedirectTo: `${window.location.origin}/login`,
+                    data: {
+                        role: newInviteUserData.role,
+                        company_id: companyInfo.id,
+                        team_id: newInviteUserData.team_id,
+                        invited_by: (await supabase.auth.getUser()).data.user?.id
+                    }
+                }
             });
 
-            if (error) {
-                throw new Error(error.message);
+            if (authError) {
+                throw new Error(authError.message);
+            }
+
+            // Si l'utilisateur a été créé, créer aussi son profil
+            if (authData.user) {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert({
+                        id: authData.user.id,
+                        company_id: companyInfo.id,
+                        team_id: newInviteUserData.role === 'Technicien' ? newInviteUserData.team_id : null,
+                        full_name: newInviteUserData.email.split('@')[0],
+                        email: newInviteUserData.email,
+                        role: newInviteUserData.role,
+                        is_active: true
+                    });
+
+                if (profileError) {
+                    console.error('Erreur lors de la création du profil:', profileError);
+                    // Le profil sera créé via le trigger si configuré
+                }
             }
 
             setFeedback('Invitation envoyée avec succès ! L\'utilisateur recevra un email de confirmation.');
