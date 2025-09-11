@@ -28,23 +28,24 @@ serve(async (req: Request) => {
       }
     )
 
-    // Create user with admin API
-    const { data: newUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      password: crypto.randomUUID().slice(0, 12) + 'A1!', // Temporary password
-      email_confirm: true,
-      user_metadata: {
-        role: role,
-        company_id: company_id,
-        team_id: team_id,
-        invited_by: inviter_name
+    // Invite user by email - this will send the invitation email automatically
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+      email,
+      {
+        redirectTo: `${new URL(signup_url).origin}/login`,
+        data: {
+          role: role,
+          company_id: company_id,
+          team_id: team_id,
+          invited_by: inviter_name
+        }
       }
-    })
+    )
 
-    if (createUserError) {
-      console.error('Error creating user:', createUserError)
+    if (inviteError) {
+      console.error('Error inviting user:', inviteError)
       return new Response(
-        JSON.stringify({ error: `Failed to create user: ${createUserError.message}` }),
+        JSON.stringify({ error: `Failed to invite user: ${inviteError.message}` }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -56,7 +57,7 @@ serve(async (req: Request) => {
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .insert({
-        id: newUser.user.id,
+        id: inviteData.user.id,
         company_id: company_id,
         team_id: team_id,
         full_name: email.split('@')[0], // Use email prefix as temporary name
@@ -68,19 +69,6 @@ serve(async (req: Request) => {
     if (profileError) {
       console.error('Error creating profile:', profileError)
       // Don't fail the function if profile creation fails - it might be created via trigger
-    }
-
-    // Send password reset email so user can set their own password
-    const { error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: email,
-      options: {
-        redirectTo: `${new URL(signup_url).origin}/login`
-      }
-    })
-
-    if (resetError) {
-      console.error('Error sending reset email:', resetError)
     }
 
     // Update invitation status to completed
@@ -98,7 +86,7 @@ serve(async (req: Request) => {
       JSON.stringify({ 
         success: true, 
         message: 'User invited successfully',
-        user_id: newUser.user.id 
+        user_id: inviteData.user.id 
       }),
       { 
         status: 200, 
