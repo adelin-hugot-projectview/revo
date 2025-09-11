@@ -1,28 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Phone, Mail, CheckCircle, Wrench, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Plus } from 'lucide-react';
+import { Search, Phone, Mail, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Plus } from 'lucide-react';
 
 const ClientCard = ({ client, sites, onClientClick }) => {
-    // MODIFICATION : Calcul des KPIs en filtrant la liste complète des chantiers
-    const clientSites = useMemo(() => 
-        sites.filter(site => site.client_id === client.id), 
-        [sites, client.id]
-    );
-
-    const completedSitesCount = useMemo(() => 
-        clientSites.filter(site => site.status?.name === 'Terminé').length, 
-        [clientSites]
-    );
-
-    const otherSitesCount = clientSites.length - completedSitesCount;
-
     return (
         <div 
-            className="bg-white rounded-xl shadow-md border border-gray-100 p-4 flex flex-col hover:shadow-lg hover:border-green-200 transition-all duration-200 group cursor-pointer"
+            className="bg-white rounded-xl shadow-md border border-gray-100 p-4 hover:shadow-lg hover:border-green-200 transition-all duration-200 group cursor-pointer"
             style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}
             onClick={() => onClientClick(client)}
         >
             {/* En-tête avec nom et actions */}
-            <div className="flex justify-between items-start mb-3">
+            <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-lg text-gray-900 truncate mb-1">{client.name}</h3>
                     <div className="flex flex-col gap-1 text-sm text-gray-500">
@@ -63,24 +50,6 @@ const ClientCard = ({ client, sites, onClientClick }) => {
                             <Mail size={14} />
                         </a>
                     )}
-                </div>
-            </div>
-            
-            {/* Statistiques compactes */}
-            <div className="flex gap-2 pt-3 border-t border-gray-100">
-                <div className="flex-1 text-center py-2 px-2 rounded-lg bg-green-50">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                        <CheckCircle size={14} className="text-green-600" />
-                        <span className="font-semibold text-green-700">{completedSitesCount}</span>
-                    </div>
-                    <p className="text-xs text-green-600 font-medium">Terminés</p>
-                </div>
-                <div className="flex-1 text-center py-2 px-2 rounded-lg bg-orange-50">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                        <Wrench size={14} className="text-orange-600" />
-                        <span className="font-semibold text-orange-700">{otherSitesCount}</span>
-                    </div>
-                    <p className="text-xs text-orange-600 font-medium">En cours</p>
                 </div>
             </div>
         </div>
