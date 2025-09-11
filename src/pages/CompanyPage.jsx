@@ -11,6 +11,18 @@ if (!isDevelopment) {
 }
 
 const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) => {
+    // Mapping des rôles entre frontend et base de données
+    const roleMapping = {
+        'Administrateur': 'admin',
+        'Technicien': 'employe',
+        'Chef de chantier': 'chef_chantier'
+    };
+
+    const reverseRoleMapping = {
+        'admin': 'Administrateur',
+        'employe': 'Technicien',
+        'chef_chantier': 'Chef de chantier'
+    };
     const [formData, setFormData] = useState(companyInfo || {});
     const [feedback, setFeedback] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -234,15 +246,27 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
         setFeedback('');
 
         try {
-            // Créer une invitation en attente au lieu de créer directement l'utilisateur
+            // Vérifier si l'utilisateur existe déjà
+            const { data: existingUser } = await supabase
+                .from('profiles')
+                .select('id, email')
+                .eq('email', newInviteUserData.email)
+                .eq('company_id', companyInfo.id)
+                .maybeSingle();
+
+            if (existingUser) {
+                throw new Error('Un utilisateur avec cet email fait déjà partie de cette société.');
+            }
+
+            // Créer une invitation en attente
             const inviteData = {
                 email: newInviteUserData.email,
-                role: newInviteUserData.role,
+                role: roleMapping[newInviteUserData.role] || newInviteUserData.role,
                 team_id: newInviteUserData.role === 'Technicien' ? newInviteUserData.team_id : null,
                 company_id: companyInfo.id,
                 invited_by: (await supabase.auth.getUser()).data.user?.id,
                 status: 'pending',
-                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 jours
+                expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             };
 
             const { error: inviteError } = await supabase
@@ -250,34 +274,35 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                 .insert(inviteData);
 
             if (inviteError) {
-                if (inviteError.code === '23505') { // Duplicate email
+                if (inviteError.code === '23505') {
                     throw new Error('Un utilisateur avec cet email a déjà été invité.');
                 }
                 throw new Error(`Erreur lors de l'invitation: ${inviteError.message}`);
             }
 
             // Appeler la Edge Function Supabase pour envoyer l'invitation par email
+            const functionPayload = {
+                email: newInviteUserData.email,
+                role: roleMapping[newInviteUserData.role] || newInviteUserData.role, // Utiliser le mapping
+                team_id: newInviteUserData.team_id,
+                team_name: newInviteUserData.team_id ? teams.find(t => t.id === newInviteUserData.team_id)?.name : null,
+                company_id: companyInfo.id,
+                company_name: companyInfo.name,
+                inviter_name: (await supabase.auth.getUser()).data.user?.email?.split('@')[0] || 'Un collègue',
+                signup_url: `${window.location.origin}/signup?email=${encodeURIComponent(newInviteUserData.email)}&company=${companyInfo.id}&role=${roleMapping[newInviteUserData.role] || newInviteUserData.role}&team=${newInviteUserData.team_id || ''}`
+            };
+
             const { data: edgeResponse, error: edgeError } = await supabase.functions.invoke('invite-user', {
-                body: {
-                    email: newInviteUserData.email,
-                    role: newInviteUserData.role,
-                    team_id: newInviteUserData.team_id,
-                    team_name: newInviteUserData.team_id ? teams.find(t => t.id === newInviteUserData.team_id)?.name : null,
-                    company_id: companyInfo.id,
-                    company_name: companyInfo.name,
-                    inviter_name: (await supabase.auth.getUser()).data.user?.email?.split('@')[0] || 'Un collègue',
-                    signup_url: `${window.location.origin}/signup?email=${encodeURIComponent(newInviteUserData.email)}&company=${companyInfo.id}&role=${newInviteUserData.role}&team=${newInviteUserData.team_id || ''}`
-                }
+                body: functionPayload
             });
 
             if (edgeError) {
-                console.error('Erreur Edge Function:', edgeError);
-                throw new Error('Erreur lors de l\'envoi de l\'invitation par email');
+                throw new Error(`Erreur lors de l'envoi de l'invitation par email: ${edgeError.message}`);
             }
-
             setFeedback('Invitation envoyée avec succès ! L\'utilisateur va recevoir un email avec les instructions.');
             setNewInviteUserData({ email: '', role: 'Technicien', team_id: null });
             setShowInviteUserModal(false);
+            fetchUsers(companyInfo.id); // Rafraîchir la liste des utilisateurs
             setTimeout(() => setFeedback(''), 5000);
         } catch (error) {
             setFeedback(`Erreur: ${error.message}`);
@@ -466,11 +491,11 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-gray-600">Administrateurs:</span>
-                                <span className="font-semibold text-blue-600">{users.filter(user => user.role === 'Administrateur').length}</span>
+                                <span className="font-semibold text-blue-600">{users.filter(user => user.role === 'admin').length}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-gray-600">Techniciens:</span>
-                                <span className="font-semibold text-green-600">{users.filter(user => user.role === 'Technicien').length}</span>
+                                <span className="font-semibold text-green-600">{users.filter(user => user.role === 'employe').length}</span>
                             </div>
                         </div>
                     )}
@@ -543,7 +568,7 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                                 ) : (
                                     <div className="flex items-center space-x-2">
                                         <span className="px-3 py-1 text-sm font-medium rounded-full" style={{ backgroundColor: colors.secondary, color: colors.primary }}>
-                                            {user.role}
+                                            {reverseRoleMapping[user.role] || user.role}
                                         </span>
                                         <button
                                             onClick={() => setEditingUser({ ...user })}

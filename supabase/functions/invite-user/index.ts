@@ -4,16 +4,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { email, role, team_id, team_name, company_id, company_name, inviter_name, signup_url } = await req.json()
+    const { email, role, team_id, company_id, inviter_name, signup_url } = await req.json()
 
     // Create Supabase client with service role key for admin operations
     const supabaseAdmin = createClient(

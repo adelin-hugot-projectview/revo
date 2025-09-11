@@ -40,8 +40,8 @@ CREATE TABLE public.checklist_templates (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT checklist_templates_pkey PRIMARY KEY (id),
-  CONSTRAINT checklist_templates_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-  CONSTRAINT checklist_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+  CONSTRAINT checklist_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id),
+  CONSTRAINT checklist_templates_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );
 CREATE TABLE public.clients (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -89,8 +89,8 @@ CREATE TABLE public.email_templates (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT email_templates_pkey PRIMARY KEY (id),
-  CONSTRAINT email_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id),
-  CONSTRAINT email_templates_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+  CONSTRAINT email_templates_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT email_templates_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.kanban_statuses (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -145,8 +145,8 @@ CREATE TABLE public.prospects (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT prospects_pkey PRIMARY KEY (id),
-  CONSTRAINT prospects_assigned_to_fkey FOREIGN KEY (assigned_to) REFERENCES public.profiles(id),
   CONSTRAINT prospects_status_id_fkey FOREIGN KEY (status_id) REFERENCES public.kanban_statuses(id),
+  CONSTRAINT prospects_assigned_to_fkey FOREIGN KEY (assigned_to) REFERENCES public.profiles(id),
   CONSTRAINT prospects_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
 );
 CREATE TABLE public.site_checklist_items (
@@ -163,9 +163,9 @@ CREATE TABLE public.site_checklist_items (
   requires_photo boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT site_checklist_items_pkey PRIMARY KEY (id),
-  CONSTRAINT site_checklist_items_checklist_id_fkey FOREIGN KEY (checklist_id) REFERENCES public.site_checklists(id),
   CONSTRAINT site_checklist_items_completed_by_fkey FOREIGN KEY (completed_by) REFERENCES public.profiles(id),
-  CONSTRAINT site_checklist_items_template_item_id_fkey FOREIGN KEY (template_item_id) REFERENCES public.checklist_template_items(id)
+  CONSTRAINT site_checklist_items_template_item_id_fkey FOREIGN KEY (template_item_id) REFERENCES public.checklist_template_items(id),
+  CONSTRAINT site_checklist_items_checklist_id_fkey FOREIGN KEY (checklist_id) REFERENCES public.site_checklists(id)
 );
 CREATE TABLE public.site_checklists (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -177,8 +177,8 @@ CREATE TABLE public.site_checklists (
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT site_checklists_pkey PRIMARY KEY (id),
   CONSTRAINT site_checklists_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.checklist_templates(id),
-  CONSTRAINT site_checklists_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id),
-  CONSTRAINT site_checklists_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id)
+  CONSTRAINT site_checklists_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id),
+  CONSTRAINT site_checklists_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id)
 );
 CREATE TABLE public.site_media (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -196,9 +196,9 @@ CREATE TABLE public.site_media (
   is_public boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT site_media_pkey PRIMARY KEY (id),
-  CONSTRAINT site_media_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.profiles(id),
+  CONSTRAINT site_media_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id),
   CONSTRAINT site_media_checklist_item_id_fkey FOREIGN KEY (checklist_item_id) REFERENCES public.site_checklist_items(id),
-  CONSTRAINT site_media_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id)
+  CONSTRAINT site_media_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES public.profiles(id)
 );
 CREATE TABLE public.sites (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -226,11 +226,11 @@ CREATE TABLE public.sites (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT sites_pkey PRIMARY KEY (id),
-  CONSTRAINT sites_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id),
-  CONSTRAINT sites_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
   CONSTRAINT sites_status_id_fkey FOREIGN KEY (status_id) REFERENCES public.kanban_statuses(id),
+  CONSTRAINT sites_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
   CONSTRAINT sites_assigned_to_fkey FOREIGN KEY (assigned_to) REFERENCES public.profiles(id),
-  CONSTRAINT sites_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id)
+  CONSTRAINT sites_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id),
+  CONSTRAINT sites_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id)
 );
 CREATE TABLE public.stripe_webhooks (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -274,6 +274,21 @@ CREATE TABLE public.todos (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT todos_pkey PRIMARY KEY (id),
   CONSTRAINT todos_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
-  CONSTRAINT todos_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id),
-  CONSTRAINT todos_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id)
+  CONSTRAINT todos_site_id_fkey FOREIGN KEY (site_id) REFERENCES public.sites(id),
+  CONSTRAINT todos_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.user_invitations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  email text NOT NULL,
+  role text NOT NULL,
+  team_id uuid,
+  company_id uuid NOT NULL,
+  invited_by uuid NOT NULL,
+  status text NOT NULL DEFAULT 'pending'::text,
+  expires_at timestamp with time zone NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT user_invitations_pkey PRIMARY KEY (id),
+  CONSTRAINT user_invitations_team_id_fkey FOREIGN KEY (team_id) REFERENCES public.teams(id),
+  CONSTRAINT user_invitations_company_id_fkey FOREIGN KEY (company_id) REFERENCES public.companies(id),
+  CONSTRAINT user_invitations_invited_by_fkey FOREIGN KEY (invited_by) REFERENCES public.profiles(id)
 );
