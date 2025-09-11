@@ -234,19 +234,10 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
         setFeedback('');
 
         try {
-            // Créer l'utilisateur directement avec Supabase Auth
+            // Créer l'utilisateur avec signUp simplifié
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: newInviteUserData.email,
                 password: Math.random().toString(36).slice(-8) + 'A1!', // Mot de passe temporaire
-                options: {
-                    emailRedirectTo: `${window.location.origin}/login`,
-                    data: {
-                        role: newInviteUserData.role,
-                        company_id: companyInfo.id,
-                        team_id: newInviteUserData.team_id,
-                        invited_by: (await supabase.auth.getUser()).data.user?.id
-                    }
-                }
             });
 
             if (authError) {
