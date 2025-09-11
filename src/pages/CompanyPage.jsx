@@ -99,24 +99,37 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
 
     const fetchUsers = async (companyId) => {
         setLoadingUsers(true);
-        const { data, error } = await supabase
+        
+        // Récupérer les utilisateurs sans jointure
+        const { data: usersData, error: usersError } = await supabase
             .from('profiles')
-            .select(`
-                id, 
-                full_name, 
-                role, 
-                team_id, 
-                email,
-                teams!profiles_team_id_fkey(name)
-            `)
+            .select('id, full_name, role, team_id, email')
             .eq('company_id', companyId);
 
-        if (error) {
-            console.error("Erreur lors du chargement des utilisateurs:", error.message);
-            setFeedback(`Erreur lors du chargement des utilisateurs: ${error.message}`);
-        } else {
-            setUsers(data);
+        if (usersError) {
+            console.error("Erreur lors du chargement des utilisateurs:", usersError.message);
+            setFeedback(`Erreur lors du chargement des utilisateurs: ${usersError.message}`);
+            setLoadingUsers(false);
+            return;
         }
+
+        // Récupérer les équipes séparément
+        const { data: teamsData, error: teamsError } = await supabase
+            .from('teams')
+            .select('id, name')
+            .eq('company_id', companyId);
+
+        if (teamsError) {
+            console.error("Erreur lors du chargement des équipes:", teamsError.message);
+        }
+
+        // Joindre les données manuellement
+        const usersWithTeams = usersData.map(user => ({
+            ...user,
+            team: user.team_id && teamsData ? teamsData.find(team => team.id === user.team_id) : null
+        }));
+
+        setUsers(usersWithTeams);
         setLoadingUsers(false);
     };
 
@@ -459,8 +472,8 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
                                 <div>
                                     <p className="text-lg font-semibold text-gray-900">{user.full_name}</p>
                                     <p className="text-sm text-gray-500">{user.email}</p>
-                                    {user.role === 'Technicien' && user.teams?.name && (
-                                        <p className="text-xs text-gray-400">Équipe: {user.teams.name}</p>
+                                    {user.role === 'Technicien' && user.team?.name && (
+                                        <p className="text-xs text-gray-400">Équipe: {user.team.name}</p>
                                     )}
                                 </div>
                                 {editingUser && editingUser.id === user.id ? (
