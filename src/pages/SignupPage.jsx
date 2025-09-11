@@ -51,9 +51,17 @@ const createCompanyAndProfile = async (user, companyName, fullName) => {
       .select()
       .single();
     
+    console.log('🔍 DEBUG - Company creation result:', { data: company, error: companyError });
+    
     if (companyError) {
       console.error('Erreur création entreprise:', companyError);
-      throw companyError;
+      
+      // Vérifier si on a quand même des données (succès partiel)
+      if (company && company.id) {
+        console.warn('⚠️ Warning: Erreur signalée mais entreprise créée avec succès:', company.id);
+      } else {
+        throw companyError;
+      }
     }
     
     console.log('✅ Entreprise créée:', company.id);
