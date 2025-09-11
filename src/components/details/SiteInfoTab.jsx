@@ -24,12 +24,6 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
     
-    console.log('🔍 SiteInfoTab props:', { 
-        siteId: site?.id, 
-        hasOnUpdateSiteStatus: !!onUpdateSiteStatus, 
-        statusColumnsLength: statusColumns.length,
-        currentStatus: site?.status 
-    });
 
     useEffect(() => {
         setFormData({
@@ -79,7 +73,7 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
         <div className="space-y-6">
             <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-red-600">🔧 TEST - Informations générales - MODIFIÉ</h3>
+                    <h3 className="text-lg font-semibold text-gray-800">Informations générales</h3>
                     {!isEditing ? (
                         <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-semibold p-2 rounded-lg hover:bg-blue-100">
                             <Edit3 size={16} /> Modifier
@@ -99,21 +93,6 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
                 {!isEditing ? (
                     <div className="grid grid-cols-2 gap-x-4 gap-y-6">
                         <InfoRow label="Équipe" value={site.team?.name} />
-                        <InfoRow label="Statut">
-                            {onUpdateSiteStatus ? (
-                                <StatusSelector 
-                                    currentStatus={site.status} 
-                                    onStatusChange={(newStatusId) => onUpdateSiteStatus(site.id, newStatusId)} 
-                                    availableStatuses={statusColumns} 
-                                    colors={colors} 
-                                    showLabel={false} 
-                                />
-                            ) : (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{backgroundColor: site.status?.color || '#A9A9A9', color: '#ffffff'}}>
-                                    {site.status?.name || 'Aucun statut'}
-                                </span>
-                            )}
-                        </InfoRow>
                         <InfoRow label="Date de début" value={new Date(site.startDate).toLocaleDateString('fr-FR')} />
                         <InfoRow label="Date de fin" value={new Date(site.endDate).toLocaleDateString('fr-FR')} />
                         <InfoRow label="Horaires" value={`${site.startTime} - ${site.endTime}`} />

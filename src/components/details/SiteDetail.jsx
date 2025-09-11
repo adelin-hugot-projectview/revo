@@ -7,11 +7,6 @@ import ChecklistTab from './ChecklistTab.jsx';
 const SiteDetail = ({ site, onUpdateSite, teams, checklistTemplates, colors, onUpdateSiteStatus, statusColumns }) => {
     const [activeTab, setActiveTab] = useState('info');
     
-    console.log('🔍 SiteDetail props:', { 
-        siteId: site?.id, 
-        hasOnUpdateSiteStatus: !!onUpdateSiteStatus, 
-        statusColumnsLength: statusColumns?.length || 0 
-    });
 
     const TabButton = ({ tabName, icon, label }) => (
         <button

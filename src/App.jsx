@@ -506,8 +506,6 @@ export default function App() {
             }
         });
         
-        console.log('🔍 DEBUG - Original updates:', updates);
-        console.log('🔍 DEBUG - Final cleaned updates:', cleanedUpdates);
         
         const { data, error } = await supabase
             .from('sites')
