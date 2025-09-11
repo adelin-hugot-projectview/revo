@@ -540,23 +540,29 @@ export default function App() {
     const handleUpdateSiteOrder = async (updatedSitesData) => {
         if (updatedSitesData.length === 0) return;
 
-        const updatePromises = updatedSitesData.map(async (updatedSite) => {
-            const { error } = await supabase
-                .from('sites')
-                .update({
-                    status_id: updatedSite.status_id,
-                    kanban_position: updatedSite.kanban_position,
-                })
-                .eq('id', updatedSite.id);
+        console.log('🔄 Mise à jour ordre des sites:', updatedSitesData);
 
-            if (error) {
-                console.error(`Erreur Supabase (update site ${updatedSite.id} order):`, error);
-                return { id: updatedSite.id, success: false, error };
+        // Mettre à jour chaque site individuellement pour éviter les erreurs RLS
+        for (const updatedSite of updatedSitesData) {
+            try {
+                const { data, error } = await supabase
+                    .from('sites')
+                    .update({
+                        status_id: updatedSite.status_id,
+                        kanban_position: updatedSite.kanban_position,
+                    })
+                    .eq('id', updatedSite.id)
+                    .select('id');
+
+                if (error) {
+                    console.error(`❌ Erreur update site ${updatedSite.id}:`, error);
+                } else {
+                    console.log(`✅ Site ${updatedSite.id} mis à jour`);
+                }
+            } catch (err) {
+                console.error(`❌ Exception update site ${updatedSite.id}:`, err);
             }
-            return { id: updatedSite.id, success: true };
-        });
-
-        await Promise.all(updatePromises);
+        }
 
         const { data: sitesRes, error: sitesError } = await supabase.from('sites').select('id, name, description, address, latitude, longitude, start_date, end_date, start_time, end_time, client_id, team_id, status_id, assigned_to, estimated_amount, final_amount, currency, priority, kanban_position, internal_notes, client_notes, company_id, created_at, updated_at, client:clients(name), team:teams(id, name), status:kanban_statuses(id, name, color, position)').order('kanban_position', { ascending: true });
         if (sitesError) {
