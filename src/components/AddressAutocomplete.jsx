@@ -36,6 +36,31 @@ const AddressAutocomplete = ({
     const suggestionsRef = useRef(null);
     const debounceRef = useRef(null);
 
+    // Fonction pour formater une adresse de manière lisible
+    const formatAddress = (suggestion) => {
+        const { address } = suggestion;
+        const parts = [];
+        
+        // Numéro + rue
+        if (address.house_number && address.road) {
+            parts.push(`${address.house_number}, ${address.road}`);
+        } else if (address.road) {
+            parts.push(address.road);
+        }
+        
+        // Code postal
+        if (address.postcode) {
+            parts.push(address.postcode);
+        }
+        
+        // Ville
+        if (address.city) {
+            parts.push(address.city);
+        }
+        
+        return parts.filter(Boolean).join(', ');
+    };
+
     // Fonction pour rechercher des adresses via Nominatim
     const searchAddresses = async (searchQuery) => {
         if (!searchQuery || searchQuery.length < 3) {
@@ -65,6 +90,7 @@ const AddressAutocomplete = ({
                     lat: parseFloat(item.lat),
                     lon: parseFloat(item.lon),
                     address: {
+                        house_number: item.address?.house_number || '',
                         road: item.address?.road || '',
                         city: item.address?.city || item.address?.town || item.address?.village || '',
                         postcode: item.address?.postcode || '',
@@ -118,9 +144,9 @@ const AddressAutocomplete = ({
     };
 
     const handleSuggestionClick = (suggestion) => {
-        const fullAddress = suggestion.display_name;
-        setQuery(fullAddress);
-        onChange?.(fullAddress);
+        const formattedAddress = formatAddress(suggestion);
+        setQuery(formattedAddress);
+        onChange?.(formattedAddress);
         
         const coords = {
             latitude: suggestion.lat,
@@ -214,9 +240,7 @@ const AddressAutocomplete = ({
                                     <MapPin size={16} className="text-gray-400 mt-1 flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
                                         <div className="text-sm font-medium text-gray-900 truncate">
-                                            {suggestion.address.road && `${suggestion.address.road}, `}
-                                            {suggestion.address.city}
-                                            {suggestion.address.postcode && ` ${suggestion.address.postcode}`}
+                                            {formatAddress(suggestion)}
                                         </div>
                                         <div className="text-xs text-gray-500 truncate mt-1">
                                             {suggestion.display_name}

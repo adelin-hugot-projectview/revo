@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Edit3, Save, X } from 'lucide-react';
@@ -10,6 +10,19 @@ import AddressAutocomplete from '../AddressAutocomplete.jsx';
 const createCustomIcon = (color) => {
     const iconHtml = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="${color}" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));"><path d="M12 0C7.589 0 4 3.589 4 8c0 4.411 8 16 8 16s8-11.589 8-16c0-4.411-3.589-8-8-8zm0 12c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/></svg>`;
     return new L.DivIcon({ html: iconHtml, className: '', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -28] });
+};
+
+// --- COMPOSANT POUR METTRE À JOUR LA CARTE LORS DU CHANGEMENT DE COORDONNÉES ---
+const MapUpdater = ({ center }) => {
+    const map = useMap();
+    
+    useEffect(() => {
+        if (center && center[0] && center[1]) {
+            map.setView(center, 15);
+        }
+    }, [center, map]);
+    
+    return null;
 };
 
 // --- COMPOSANT POUR AFFICHER UNE LIGNE D'INFORMATION ---
@@ -24,6 +37,7 @@ const InfoRow = ({ label, value, children }) => (
 const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, statusColumns = [] }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({});
+    const [mapCenter, setMapCenter] = useState([site.latitude, site.longitude]);
     
 
     useEffect(() => {
@@ -55,6 +69,11 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
             latitude: coordinates?.latitude || null,
             longitude: coordinates?.longitude || null
         }));
+        
+        // Mettre à jour le centre de la carte si on a de nouvelles coordonnées
+        if (coordinates?.latitude && coordinates?.longitude) {
+            setMapCenter([coordinates.latitude, coordinates.longitude]);
+        }
     };
 
     const handleSave = () => {
@@ -84,7 +103,10 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
         setIsEditing(false);
     };
 
-    const hasCoordinates = typeof site.latitude === 'number' && typeof site.longitude === 'number';
+    // Utiliser les coordonnées du formulaire s'il y en a, sinon celles du site
+    const currentLatitude = formData.latitude !== null ? formData.latitude : site.latitude;
+    const currentLongitude = formData.longitude !== null ? formData.longitude : site.longitude;
+    const hasCoordinates = typeof currentLatitude === 'number' && typeof currentLongitude === 'number';
 
     return (
         <div className="space-y-6">
@@ -173,11 +195,17 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
             
             <div className="h-48 w-full rounded-lg overflow-hidden border z-10">
                 {hasCoordinates ? (
-                    <MapContainer center={[site.latitude, site.longitude]} zoom={15} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
+                    <MapContainer 
+                        center={mapCenter.filter(coord => coord != null).length === 2 ? mapCenter : [currentLatitude, currentLongitude]} 
+                        zoom={15} 
+                        style={{ height: '100%', width: '100%' }} 
+                        scrollWheelZoom={false}
+                    >
                         <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; OpenStreetMap &copy; CARTO'/>
-                        <Marker position={[site.latitude, site.longitude]} icon={createCustomIcon(colors.primary)}>
+                        <Marker position={[currentLatitude, currentLongitude]} icon={createCustomIcon(site.status?.color || colors.primary)}>
                             <Popup>{site.name}</Popup>
                         </Marker>
+                        <MapUpdater center={mapCenter} />
                     </MapContainer>
                 ) : (
                     <div className="h-full w-full flex items-center justify-center bg-gray-100">
