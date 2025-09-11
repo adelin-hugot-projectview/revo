@@ -188,6 +188,112 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 });
 
 
+// NOUVEAU ENDPOINT : Inviter un utilisateur
+app.post('/invite-user', express.json(), async (req, res) => {
+    console.log('Received /invite-user request');
+    const { email, role, team_id, company_id } = req.body;
+    console.log('Invitation data:', { email, role, team_id, company_id });
+
+    if (!email || !role || !company_id) {
+        console.log('Missing required fields for invitation');
+        return res.status(400).json({ error: 'Email, role, and company_id are required.' });
+    }
+
+    // Vérifier si le rôle est valide
+    const validRoles = ['Administrateur', 'Technicien'];
+    if (!validRoles.includes(role)) {
+        console.log('Invalid role:', role);
+        return res.status(400).json({ error: 'Invalid role. Must be Administrateur or Technicien.' });
+    }
+
+    // Si c'est un technicien, team_id est requis
+    if (role === 'Technicien' && !team_id) {
+        console.log('Technicien role requires team_id');
+        return res.status(400).json({ error: 'team_id is required for Technicien role.' });
+    }
+
+    try {
+        // Vérifier si l'utilisateur existe déjà
+        const { data: existingUser, error: checkError } = await supabase.auth.admin.getUserByEmail(email);
+        
+        if (checkError && checkError.status !== 404) {
+            console.error('Error checking existing user:', checkError);
+            return res.status(500).json({ error: 'Error checking existing user.' });
+        }
+
+        if (existingUser && existingUser.user) {
+            console.log('User already exists');
+            return res.status(400).json({ error: 'Un utilisateur avec cet email existe déjà.' });
+        }
+
+        // Créer l'utilisateur dans Supabase Auth
+        const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+            email: email,
+            password: Math.random().toString(36).slice(-8) + 'A1!', // Mot de passe temporaire
+            email_confirm: true // Auto-confirmer l'email
+        });
+
+        if (createError) {
+            console.error('Error creating user in auth:', createError);
+            return res.status(500).json({ error: 'Erreur lors de la création de l\'utilisateur.' });
+        }
+
+        console.log('User created in auth:', newUser.user.id);
+
+        // Créer le profil utilisateur
+        const profileData = {
+            id: newUser.user.id,
+            company_id: company_id,
+            team_id: role === 'Technicien' ? team_id : null,
+            full_name: email.split('@')[0], // Utiliser la partie email comme nom temporaire
+            email: email,
+            role: role,
+            is_active: true
+        };
+
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .insert(profileData)
+            .select()
+            .single();
+
+        if (profileError) {
+            console.error('Error creating profile:', profileError);
+            // Supprimer l'utilisateur auth si la création du profil échoue
+            await supabase.auth.admin.deleteUser(newUser.user.id);
+            return res.status(500).json({ error: 'Erreur lors de la création du profil utilisateur.' });
+        }
+
+        console.log('Profile created successfully:', profile.id);
+
+        // Envoyer un email de réinitialisation de mot de passe pour que l'utilisateur puisse définir son mot de passe
+        const { error: resetError } = await supabase.auth.admin.generateLink({
+            type: 'recovery',
+            email: email
+        });
+
+        if (resetError) {
+            console.error('Error sending recovery email:', resetError);
+            // Ne pas échouer l'invitation si l'email ne peut pas être envoyé
+        }
+
+        console.log('User invitation completed successfully');
+        res.json({ 
+            message: 'Invitation envoyée avec succès !',
+            user: {
+                id: profile.id,
+                email: profile.email,
+                role: profile.role,
+                team_id: profile.team_id
+            }
+        });
+
+    } catch (error) {
+        console.error('Error in invite-user endpoint:', error);
+        res.status(500).json({ error: 'Erreur interne du serveur.' });
+    }
+});
+
 // Démarrer le serveur
 app.listen(PORT, () => {
     console.log(`Stripe server running on port ${PORT}`);

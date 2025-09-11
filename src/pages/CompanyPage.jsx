@@ -414,7 +414,25 @@ const CompanyPage = ({ companyInfo, setCompanyInfo, colors, currentUserRole }) =
             </form>
 
             <div className="max-w-4xl mx-auto p-8 bg-white rounded-xl shadow-sm space-y-4 w-full mt-8">
-                <h2 className="text-2xl font-bold text-gray-800 font-['Poppins']">Utilisateurs de la société</h2>
+                <div className="flex justify-between items-center">
+                    <h2 className="text-2xl font-bold text-gray-800 font-['Poppins']">Utilisateurs de la société</h2>
+                    {!loadingUsers && (
+                        <div className="flex items-center gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-600">Total:</span>
+                                <span className="font-semibold text-gray-900">{users.length}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-600">Administrateurs:</span>
+                                <span className="font-semibold text-blue-600">{users.filter(user => user.role === 'Administrateur').length}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-600">Techniciens:</span>
+                                <span className="font-semibold text-green-600">{users.filter(user => user.role === 'Technicien').length}</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
                 {currentUserRole === 'Administrateur' && (
                     <div className="flex space-x-4">
                         <button
