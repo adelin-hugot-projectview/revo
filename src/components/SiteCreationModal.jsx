@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { X, Plus } from 'lucide-react';
+import AddressAutocomplete from './AddressAutocomplete.jsx';
 
 const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, checklistTemplates, colors, onAddClient, availableStatuses }) => {
     // On s'assure que tous les champs sont présents dans l'état initial
@@ -13,6 +14,8 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
         startTime: '09:00',
         endTime: '12:00',
         address: '',
+        latitude: null,
+        longitude: null,
         team_id: '',
     };
     const [formData, setFormData] = useState(initialFormState);
@@ -45,6 +48,18 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
             ...prev,
             client_id: selectedClientId,
             address: selectedClient ? selectedClient.address || '' : ''
+        }));
+    };
+
+    const handleAddressChange = (address) => {
+        setFormData(prev => ({ ...prev, address }));
+    };
+
+    const handleCoordinatesChange = (coordinates) => {
+        setFormData(prev => ({
+            ...prev,
+            latitude: coordinates?.latitude || null,
+            longitude: coordinates?.longitude || null
         }));
     };
 
@@ -114,8 +129,15 @@ const SiteCreationModal = ({ isOpen, onRequestClose, onSave, clients, teams, che
                         </div>
                     </div>
                     <div>
-                        <label htmlFor="address" className="block text-sm font-medium text-gray-700">Adresse du chantier</label>
-                        <input type="text" name="address" id="address" value={formData.address} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-primary"/>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Adresse du chantier</label>
+                        <AddressAutocomplete
+                            value={formData.address}
+                            onChange={handleAddressChange}
+                            onCoordinatesChange={handleCoordinatesChange}
+                            statusColor={availableStatuses?.find(s => s.id === formData.status_id)?.color || colors.primary}
+                            placeholder="Rechercher une adresse..."
+                            showMap={true}
+                        />
                     </div>
                     
                     {/* --- DATES ET HEURES --- */}
