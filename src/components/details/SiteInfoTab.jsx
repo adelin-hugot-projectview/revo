@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Edit3, Save, X } from 'lucide-react';
 import StatusSelector from '../StatusSelector.jsx';
+import AddressAutocomplete from '../AddressAutocomplete.jsx';
 
 // --- FONCTION POUR CRÉER UNE ICÔNE DE CARTE PERSONNALISÉE ---
 const createCustomIcon = (color) => {
@@ -34,12 +35,26 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
             start_time: site.startTime || '09:00',
             end_time: site.endTime || '17:00',
             address: site.address || '',
+            latitude: site.latitude || null,
+            longitude: site.longitude || null,
         });
     }, [site]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleAddressChange = (address) => {
+        setFormData(prev => ({ ...prev, address }));
+    };
+
+    const handleCoordinatesChange = (coordinates) => {
+        setFormData(prev => ({
+            ...prev,
+            latitude: coordinates?.latitude || null,
+            longitude: coordinates?.longitude || null
+        }));
     };
 
     const handleSave = () => {
@@ -53,6 +68,8 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
                 case 'end_time':   initialValue = site.endTime || '17:00'; break;
                 case 'start_date': initialValue = site.startDate ? site.startDate.split('T')[0] : ''; break;
                 case 'end_date':   initialValue = site.endDate ? site.endDate.split('T')[0] : ''; break;
+                case 'latitude':   initialValue = site.latitude || null; break;
+                case 'longitude':  initialValue = site.longitude || null; break;
                 default:           initialValue = site[key] || '';
             }
             if (formData[key] !== initialValue) {
@@ -139,7 +156,15 @@ const SiteInfoTab = ({ site, teams, colors, onUpdateSite, onUpdateSiteStatus, st
                         </div>
                          <div className="col-span-2">
                             <InfoRow label="Adresse">
-                                <input type="text" name="address" value={formData.address} onChange={handleInputChange} className="w-full p-2 border border-gray-300 rounded-md"/>
+                                <AddressAutocomplete
+                                    value={formData.address}
+                                    onChange={handleAddressChange}
+                                    onCoordinatesChange={handleCoordinatesChange}
+                                    statusColor={site.status?.color || '#2B5F4C'}
+                                    placeholder="Rechercher une adresse..."
+                                    showMap={false}
+                                    className="w-full"
+                                />
                             </InfoRow>
                         </div>
                     </div>

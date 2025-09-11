@@ -200,7 +200,8 @@ const AddressAutocomplete = ({
                 {showSuggestions && suggestions.length > 0 && (
                     <div 
                         ref={suggestionsRef}
-                        className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                        className="absolute z-[9999] w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                        style={{ zIndex: 9999 }}
                     >
                         {suggestions.map((suggestion) => (
                             <button
@@ -230,12 +231,12 @@ const AddressAutocomplete = ({
 
             {/* Aperçu de la carte */}
             {showMap && selectedCoords && (
-                <div className="h-48 w-full rounded-lg overflow-hidden border border-gray-200">
+                <div className="h-48 w-full rounded-lg overflow-hidden border border-gray-200 relative z-10">
                     <MapContainer
                         key={mapKey}
                         center={[selectedCoords.latitude, selectedCoords.longitude]}
                         zoom={15}
-                        style={{ height: '100%', width: '100%' }}
+                        style={{ height: '100%', width: '100%', zIndex: 10 }}
                         scrollWheelZoom={false}
                         zoomControl={false}
                     >
