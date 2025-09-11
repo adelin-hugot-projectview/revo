@@ -6,6 +6,11 @@ const StatusBadge = ({ currentStatus, onStatusChange, availableStatuses = [], co
     const currentStatusId = currentStatus?.id || '';
 
     const handleSelectChange = (e) => {
+        console.log('🏷️ StatusBadge - Changement de statut:', {
+            from: currentStatusId,
+            to: e.target.value,
+            statusName: availableStatuses.find(s => s.id === e.target.value)?.name
+        });
         onStatusChange(e.target.value); // On passe l'ID du nouveau statut
     };
     

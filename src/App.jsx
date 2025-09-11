@@ -398,6 +398,7 @@ export default function App() {
     };
 
     const handleUpdateSite = async (siteId, updates) => {
+        console.log('🔧 handleUpdateSite appelée:', { siteId, updates });
         const originalSites = [...sites];
         const originalSelectedSite = selectedSite ? { ...selectedSite } : null;
 
