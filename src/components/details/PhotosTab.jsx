@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, X } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -6,6 +6,9 @@ const PhotosTab = ({ site, onUpdateSite, colors }) => {
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [photos, setPhotos] = useState([]);
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const handleFileSelect = (event) => {
         const files = Array.from(event.target.files);
@@ -13,6 +16,37 @@ const PhotosTab = ({ site, onUpdateSite, colors }) => {
             setSelectedFiles(prev => [...prev, ...files]);
             const newPreviews = files.map(file => URL.createObjectURL(file));
             setPreviews(prev => [...prev, ...newPreviews]);
+        }
+    };
+
+    useEffect(() => {
+        // Récupérer l'utilisateur connecté et les photos
+        const loadData = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setUser(user);
+            
+            if (site?.id) {
+                await loadPhotos();
+            }
+            setLoading(false);
+        };
+        loadData();
+    }, [site?.id]);
+
+    const loadPhotos = async () => {
+        if (!site?.id) return;
+        
+        const { data, error } = await supabase
+            .from('site_media')
+            .select('*')
+            .eq('site_id', site.id)
+            .eq('file_type', 'image')
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.error('Error loading photos:', error);
+        } else {
+            setPhotos(data || []);
         }
     };
 
@@ -27,47 +61,53 @@ const PhotosTab = ({ site, onUpdateSite, colors }) => {
     };
     
     const handleUpload = async () => {
-        if (selectedFiles.length === 0) return;
+        if (selectedFiles.length === 0 || !user) return;
         setIsUploading(true);
 
-        const uploadPromises = selectedFiles.map(file => {
-            const fileName = `${site.id}/${Date.now()}-${file.name}`;
-            // MODIFICATION: Upload dans le bucket "photoschantier"
-            return supabase.storage.from('photoschantier').upload(fileName, file);
-        });
-
         try {
-            const results = await Promise.all(uploadPromises);
-            
-            const newPhotoUrls = [];
-            let hadError = false;
-            results.forEach(result => {
-                if (result.error) {
-                    console.error("Erreur d'upload:", result.error);
-                    hadError = true;
-                } else {
-                    const { data } = supabase.storage.from('photoschantier').getPublicUrl(result.data.path);
-                    newPhotoUrls.push(data.publicUrl);
+            for (const file of selectedFiles) {
+                const fileName = `${site.id}/${Date.now()}-${file.name}`;
+                
+                // 1. Upload du fichier
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('photoschantier')
+                    .upload(fileName, file);
+
+                if (uploadError) {
+                    console.error("Erreur d'upload:", uploadError);
+                    continue;
                 }
-            });
 
-            if (hadError) {
-                alert("Une erreur est survenue lors du téléversement d'au moins une photo.");
+                // 2. Insertion dans site_media
+                const { error: dbError } = await supabase
+                    .from('site_media')
+                    .insert({
+                        site_id: site.id,
+                        uploaded_by: user.id,
+                        file_path: uploadData.path,
+                        file_type: 'image',
+                        mime_type: file.type,
+                        file_size: file.size,
+                        original_filename: file.name
+                    });
+
+                if (dbError) {
+                    console.error("Erreur d'insertion en base:", dbError);
+                }
             }
 
-            if (newPhotoUrls.length > 0) {
-                const updatedPhotos = [...(site.photos || []), ...newPhotoUrls];
-                await onUpdateSite({ photos: updatedPhotos });
-            }
+            // Recharger les photos
+            await loadPhotos();
+            alert(`${selectedFiles.length} photo(s) uploadée(s) avec succès !`);
+            
         } catch (error) {
             console.error("Erreur globale d'upload:", error);
             alert("Une erreur majeure est survenue.");
         }
 
-
         setIsUploading(false);
         setSelectedFiles([]);
-        previews.forEach(url => URL.revokeObjectURL(url)); // Nettoie toutes les URLs d'aperçu
+        previews.forEach(url => URL.revokeObjectURL(url));
         setPreviews([]);
     };
 
@@ -104,18 +144,28 @@ const PhotosTab = ({ site, onUpdateSite, colors }) => {
             )}
 
             <div>
-                 <h4 className="font-semibold mb-4 text-gray-700">Photos du chantier :</h4>
-                 {(site.photos && site.photos.length > 0) ? (
+                <h4 className="font-semibold mb-4 text-gray-700">Photos du chantier :</h4>
+                {loading ? (
+                    <p className="text-sm text-center text-gray-500 bg-gray-50 py-10 rounded-lg">Chargement des photos...</p>
+                ) : photos.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {site.photos.map((photo, index) => (
-                            <div key={index} className="relative aspect-square">
-                                <img src={photo} alt={`Chantier ${index + 1}`} className="w-full h-full object-cover rounded-lg"/>
-                            </div>
-                        ))}
+                        {photos.map((photo) => {
+                            const { data } = supabase.storage.from('photoschantier').getPublicUrl(photo.file_path);
+                            return (
+                                <div key={photo.id} className="relative aspect-square">
+                                    <img 
+                                        src={data.publicUrl} 
+                                        alt={photo.original_filename || 'Photo du chantier'} 
+                                        className="w-full h-full object-cover rounded-lg"
+                                        title={photo.original_filename}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
-                 ) : (
+                ) : (
                     <p className="text-sm text-center text-gray-500 bg-gray-50 py-10 rounded-lg">Aucune photo pour ce chantier.</p>
-                 )}
+                )}
             </div>
         </div>
     );
