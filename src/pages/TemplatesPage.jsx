@@ -389,6 +389,7 @@ const TemplatesPage = ({ colors }) => {
                 message={`Êtes-vous sûr de vouloir supprimer le modèle "${templateToDelete?.name}" ? Cette action est irréversible.`}
                 confirmText="Supprimer"
                 cancelText="Annuler"
+                colors={colors}
             />
         </div>
     );
