@@ -150,6 +150,9 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
 
     const handleApplyTemplate = async (e) => {
         const templateId = e.target.value;
+        console.log('🎯 Template selected:', templateId);
+        console.log('📋 Available templates:', checklistTemplates);
+        
         if (!templateId || !user) return;
 
         try {
@@ -159,6 +162,8 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
                 .select('*')
                 .eq('id', templateId)
                 .single();
+                
+            console.log('✅ Template fetched:', template);
 
             if (templateError) {
                 console.error('Error loading template:', templateError);
@@ -170,6 +175,8 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
                 .select('*')
                 .eq('template_id', templateId)
                 .order('position', { ascending: true });
+                
+            console.log('📝 Template items fetched:', templateItems);
 
             if (itemsError) {
                 console.error('Error loading template items:', itemsError);
