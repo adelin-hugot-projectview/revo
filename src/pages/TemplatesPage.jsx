@@ -144,7 +144,7 @@ const ChecklistModal = ({ isOpen, onRequestClose, onSave, colors, editingTemplat
 };
 
 // --- COMPOSANT PRINCIPAL ---
-const TemplatesPage = () => {
+const TemplatesPage = ({ colors }) => {
     const [checklistTemplates, setChecklistTemplates] = useState([]);
     const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState(null);
@@ -378,6 +378,7 @@ const TemplatesPage = () => {
                 isOpen={isChecklistModalOpen} 
                 onRequestClose={() => setIsChecklistModalOpen(false)} 
                 onSave={onSaveTemplate} 
+                colors={colors}
                 editingTemplate={editingTemplate}
             />
             <ConfirmationModal 
