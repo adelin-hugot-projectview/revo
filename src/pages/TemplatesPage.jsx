@@ -239,23 +239,25 @@ const TemplatesPage = ({ colors }) => {
                     .delete()
                     .eq('template_id', template.id);
 
-                // Créer les nouveaux items
+                // Créer les nouveaux items un par un pour éviter les problèmes RLS
                 if (template.tasks.length > 0) {
-                    const itemsToInsert = template.tasks.map((task, index) => ({
-                        template_id: template.id,
-                        title: task,
-                        position: index + 1
-                    }));
+                    for (let index = 0; index < template.tasks.length; index++) {
+                        const task = template.tasks[index];
+                        const { error: itemError } = await supabase
+                            .from('checklist_template_items')
+                            .insert({
+                                template_id: template.id,
+                                title: task,
+                                position: index + 1
+                            });
 
-                    const { error: itemsError } = await supabase
-                        .from('checklist_template_items')
-                        .insert(itemsToInsert);
-
-                    if (itemsError) {
-                        console.error('Error updating template items:', itemsError);
-                        console.error('Items to insert:', itemsToInsert);
-                        alert(`Erreur lors de la mise à jour des tâches: ${itemsError.message}`);
-                        return;
+                        if (itemError) {
+                            console.error(`Error updating template item ${index}:`, itemError);
+                            console.error('Template ID:', template.id);
+                            console.error('User ID:', user.id);
+                            alert(`Erreur lors de la mise à jour de la tâche "${task}": ${itemError.message}`);
+                            return;
+                        }
                     }
                 }
 
@@ -291,23 +293,25 @@ const TemplatesPage = ({ colors }) => {
                     return;
                 }
 
-                // Créer les items du template
+                // Créer les items du template un par un pour éviter les problèmes RLS
                 if (template.tasks.length > 0) {
-                    const itemsToInsert = template.tasks.map((task, index) => ({
-                        template_id: newTemplate.id,
-                        title: task,
-                        position: index + 1
-                    }));
+                    for (let index = 0; index < template.tasks.length; index++) {
+                        const task = template.tasks[index];
+                        const { error: itemError } = await supabase
+                            .from('checklist_template_items')
+                            .insert({
+                                template_id: newTemplate.id,
+                                title: task,
+                                position: index + 1
+                            });
 
-                    const { error: itemsError } = await supabase
-                        .from('checklist_template_items')
-                        .insert(itemsToInsert);
-
-                    if (itemsError) {
-                        console.error('Error creating template items:', itemsError);
-                        console.error('Items to insert:', itemsToInsert);
-                        alert(`Erreur lors de la création des tâches: ${itemsError.message}`);
-                        return;
+                        if (itemError) {
+                            console.error(`Error creating template item ${index}:`, itemError);
+                            console.error('Template ID:', newTemplate.id);
+                            console.error('User ID:', user.id);
+                            alert(`Erreur lors de la création de la tâche "${task}": ${itemError.message}`);
+                            return;
+                        }
                     }
                 }
             }
