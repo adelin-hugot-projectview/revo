@@ -166,10 +166,23 @@ const TemplatesPage = ({ colors }) => {
     const fetchChecklistTemplates = async () => {
         if (!user) return;
 
-        // Récupérer les templates avec leurs items
+        // D'abord récupérer le company_id de l'utilisateur
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('company_id')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !profile) {
+            console.error('Error fetching user profile:', profileError);
+            return;
+        }
+
+        // Récupérer les templates avec leurs items pour cette entreprise
         const { data: templatesData, error: templatesError } = await supabase
             .from('checklist_templates')
             .select('*')
+            .eq('company_id', profile.company_id)
             .order('created_at', { ascending: false });
 
         if (templatesError) {
@@ -246,13 +259,26 @@ const TemplatesPage = ({ colors }) => {
                 }
 
             } else {
+                // Récupérer le company_id depuis le profil
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('company_id')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileError || !profile) {
+                    console.error('Error fetching user profile for template creation:', profileError);
+                    alert('Erreur lors de la récupération du profil utilisateur');
+                    return;
+                }
+
                 // Create new template
                 const { data: newTemplate, error: templateError } = await supabase
                     .from('checklist_templates')
                     .insert([{ 
                         name: template.name, 
                         description: template.description,
-                        company_id: user.user_metadata?.company_id || user.company_id,
+                        company_id: profile.company_id,
                         created_by: user.id
                     }])
                     .select()
