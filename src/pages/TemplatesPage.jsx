@@ -7,6 +7,7 @@ import ConfirmationModal from '../components/ConfirmationModal.jsx';
 // --- MODAL DE CRÉATION/ÉDITION DE CHECKLIST (MODERNISÉE) ---
 const ChecklistModal = ({ isOpen, onRequestClose, onSave, colors, editingTemplate }) => {
     const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
     const [tasks, setTasks] = useState([]);
     const [prompt, setPrompt] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -15,9 +16,11 @@ const ChecklistModal = ({ isOpen, onRequestClose, onSave, colors, editingTemplat
     useEffect(() => {
         if (editingTemplate) {
             setName(editingTemplate.name || '');
+            setDescription(editingTemplate.description || '');
             setTasks(editingTemplate.tasks || []);
         } else {
             setName('');
+            setDescription('');
             setTasks([]);
             setPrompt('');
         }
@@ -80,7 +83,7 @@ const ChecklistModal = ({ isOpen, onRequestClose, onSave, colors, editingTemplat
     };
 
     const handleSubmit = () => {
-        onSave({ ...editingTemplate, name, tasks });
+        onSave({ ...editingTemplate, name, description, tasks });
         onRequestClose();
     };
 
@@ -96,104 +99,227 @@ const ChecklistModal = ({ isOpen, onRequestClose, onSave, colors, editingTemplat
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Nom du modèle</label>
                         <input type="text" name="name" id="name" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1" style={{'--tw-ring-color': '#22C55E'}}/>
                     </div>
+                    <div>
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description (optionnelle)</label>
+                        <textarea name="description" id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1" style={{'--tw-ring-color': '#22C55E'}}/>
+                    </div>
                     {!editingTemplate && (
                         <div className="p-4 bg-gray-50 rounded-lg">
-                            <label htmlFor="prompt" className="block text-sm font-semibold text-gray-700 mb-2">Générer des tâches avec l'IA</label>
-                            <div className="flex gap-2">
-                                <input type="text" name="prompt" id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ex: préparer une intervention de peinture" className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
-                                <button type="button" onClick={handleGenerateAI} disabled={isLoading} className="flex items-center justify-center gap-2 px-4 py-2 text-white rounded-lg transition-colors" style={{backgroundColor: '#22C55E', minWidth: '110px'}}>
-                                    {isLoading ? <Loader className="animate-spin" size={20}/> : <><Sparkles size={20}/><span>Générer</span></>}
+                            <div className="flex items-center gap-3 mb-3">
+                                <Sparkles className="text-purple-500" size={20}/>
+                                <h3 className="text-sm font-semibold text-gray-700">Génération IA</h3>
+                            </div>
+                            <div className="space-y-3">
+                                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Décris le type de checklist que tu souhaites (ex: 'inspection de sécurité pour chantier')" className="w-full p-3 border border-gray-300 rounded-md text-sm resize-none" rows="2"/>
+                                <button type="button" onClick={handleGenerateAI} disabled={!prompt.trim() || isLoading} className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                    {isLoading ? <Loader className="animate-spin" size={16}/> : <Sparkles size={16}/>}
+                                    {isLoading ? 'Génération...' : 'Générer avec l\'IA'}
                                 </button>
                             </div>
                         </div>
                     )}
-                    <div className="space-y-2">
-                        <h4 className="font-semibold text-gray-700">Tâches</h4>
-                        <div className="p-4 border rounded-md min-h-[150px] max-h-60 overflow-y-auto bg-white">
-                            {tasks.length > 0 ? (
-                                <ul className="space-y-2">{tasks.map((task, index) => (<li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md group"><span className="text-sm text-gray-800">{task}</span><button type="button" onClick={() => handleRemoveTask(index)} className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16}/></button></li>))}</ul>
-                            ) : <div className="text-sm text-center text-gray-400 flex items-center justify-center h-full">{isLoading ? 'Génération en cours...' : 'Aucune tâche.'}</div>}
-                        </div>
-                    </div>
-                     <div>
-                        <label className="text-sm font-medium text-gray-700 mb-1">Ajouter une tâche manuellement</label>
-                        <div className="flex gap-2">
-                            <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="Nouvelle tâche..." className="flex-grow px-3 py-2 border border-gray-300 rounded-md shadow-sm"/>
-                            <button type="button" onClick={handleAddTask} className="px-4 py-2 text-white rounded-lg" style={{backgroundColor: '#22C55E'}}><Plus size={20}/></button>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">Tâches ({tasks.length})</label>
+                        <div className="space-y-3">
+                            {tasks.map((task, index) => (
+                                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <span className="flex-grow text-sm text-gray-700">{task}</span>
+                                    <button type="button" onClick={() => handleRemoveTask(index)} className="text-red-500 hover:text-red-700 p-1"><X size={16}/></button>
+                                </div>
+                            ))}
+                            <div className="flex gap-2">
+                                <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleAddTask()} placeholder="Ajouter une tâche..." className="flex-grow px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1" style={{'--tw-ring-color': '#22C55E'}}/>
+                                <button type="button" onClick={handleAddTask} className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"><Plus size={16}/></button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div className="flex justify-end gap-4 p-6 border-t mt-auto">
-                    <button type="button" onClick={onRequestClose} className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300">Annuler</button>
-                    <button type="button" onClick={handleSubmit} className="px-4 py-2 text-white font-semibold rounded-lg" style={{backgroundColor: '#22C55E'}}>Enregistrer</button>
+                <div className="p-6 border-t flex justify-end gap-3">
+                    <button type="button" onClick={onRequestClose} className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">Annuler</button>
+                    <button type="button" onClick={handleSubmit} disabled={!name.trim() || tasks.length === 0} className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">{editingTemplate ? 'Modifier' : 'Créer'}</button>
                 </div>
             </div>
         </Modal>
     );
 };
 
-// --- COMPOSANT PRINCIPAL DE LA PAGE ---
-const TemplatesPage = ({ colors }) => {
+// --- COMPOSANT PRINCIPAL ---
+const TemplatesPage = () => {
     const [checklistTemplates, setChecklistTemplates] = useState([]);
     const [isChecklistModalOpen, setIsChecklistModalOpen] = useState(false);
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState(null);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
     const [templateToDelete, setTemplateToDelete] = useState(null);
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
-        fetchTemplates();
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setUser(user);
+            if (user) {
+                fetchChecklistTemplates();
+            }
+        };
+        getUser();
     }, []);
 
-    const fetchTemplates = async () => {
-        const { data, error } = await supabase
+    const fetchChecklistTemplates = async () => {
+        if (!user) return;
+
+        // Récupérer les templates avec leurs items
+        const { data: templatesData, error: templatesError } = await supabase
             .from('checklist_templates')
-            .select('id, name, tasks');
-        if (error) {
-            console.error('Error fetching templates:', error);
-        } else {
-            setChecklistTemplates(data);
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (templatesError) {
+            console.error('Error fetching templates:', templatesError);
+            return;
         }
+
+        // Pour chaque template, récupérer ses items
+        const templatesWithTasks = await Promise.all(
+            templatesData.map(async (template) => {
+                const { data: items, error: itemsError } = await supabase
+                    .from('checklist_template_items')
+                    .select('*')
+                    .eq('template_id', template.id)
+                    .order('position', { ascending: true });
+
+                if (itemsError) {
+                    console.error('Error fetching template items:', itemsError);
+                    return { ...template, tasks: [] };
+                }
+
+                return { ...template, tasks: items.map(item => item.title) };
+            })
+        );
+
+        setChecklistTemplates(templatesWithTasks);
     };
 
     const onSaveTemplate = async (template) => {
-        if (template.id) {
-            // Update existing template
-            const { data, error } = await supabase
-                .from('checklist_templates')
-                .update({ name: template.name, tasks: template.tasks })
-                .eq('id', template.id)
-                .select();
-            if (error) {
-                console.error('Error updating template:', error);
-            } else if (data) {
-                setChecklistTemplates(prev => prev.map(t => t.id === data[0].id ? data[0] : t));
+        if (!user) return;
+
+        try {
+            if (template.id) {
+                // Update existing template
+                const { data: updatedTemplate, error: templateError } = await supabase
+                    .from('checklist_templates')
+                    .update({ 
+                        name: template.name, 
+                        description: template.description 
+                    })
+                    .eq('id', template.id)
+                    .select()
+                    .single();
+
+                if (templateError) {
+                    console.error('Error updating template:', templateError);
+                    alert('Erreur lors de la mise à jour du template');
+                    return;
+                }
+
+                // Supprimer les anciens items
+                await supabase
+                    .from('checklist_template_items')
+                    .delete()
+                    .eq('template_id', template.id);
+
+                // Créer les nouveaux items
+                if (template.tasks.length > 0) {
+                    const itemsToInsert = template.tasks.map((task, index) => ({
+                        template_id: template.id,
+                        title: task,
+                        position: index + 1
+                    }));
+
+                    const { error: itemsError } = await supabase
+                        .from('checklist_template_items')
+                        .insert(itemsToInsert);
+
+                    if (itemsError) {
+                        console.error('Error updating template items:', itemsError);
+                        alert('Erreur lors de la mise à jour des tâches');
+                        return;
+                    }
+                }
+
+            } else {
+                // Create new template
+                const { data: newTemplate, error: templateError } = await supabase
+                    .from('checklist_templates')
+                    .insert([{ 
+                        name: template.name, 
+                        description: template.description,
+                        company_id: user.user_metadata?.company_id || user.company_id,
+                        created_by: user.id
+                    }])
+                    .select()
+                    .single();
+
+                if (templateError) {
+                    console.error('Error creating template:', templateError);
+                    alert('Erreur lors de la création du template');
+                    return;
+                }
+
+                // Créer les items du template
+                if (template.tasks.length > 0) {
+                    const itemsToInsert = template.tasks.map((task, index) => ({
+                        template_id: newTemplate.id,
+                        title: task,
+                        position: index + 1
+                    }));
+
+                    const { error: itemsError } = await supabase
+                        .from('checklist_template_items')
+                        .insert(itemsToInsert);
+
+                    if (itemsError) {
+                        console.error('Error creating template items:', itemsError);
+                        alert('Erreur lors de la création des tâches');
+                        return;
+                    }
+                }
             }
-        } else {
-            // Create new template
-            const { data, error } = await supabase
-                .from('checklist_templates')
-                .insert([{ name: template.name, tasks: template.tasks }])
-                .select();
-            if (error) {
-                console.error('Error creating template:', error);
-            } else if (data) {
-                setChecklistTemplates(prev => [...prev, data[0]]);
-            }
+
+            // Recharger les templates
+            await fetchChecklistTemplates();
+            setIsChecklistModalOpen(false);
+
+        } catch (error) {
+            console.error('Error saving template:', error);
+            alert('Erreur lors de la sauvegarde');
         }
-        setIsChecklistModalOpen(false);
     };
 
     const onDeleteTemplate = async (id) => {
-        const { error } = await supabase
-            .from('checklist_templates')
-            .delete()
-            .eq('id', id);
-        if (error) {
+        try {
+            // Supprimer d'abord les items du template
+            await supabase
+                .from('checklist_template_items')
+                .delete()
+                .eq('template_id', id);
+
+            // Puis supprimer le template
+            const { error } = await supabase
+                .from('checklist_templates')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error deleting template:', error);
+                alert('Erreur lors de la suppression');
+            } else {
+                setChecklistTemplates(prev => prev.filter(t => t.id !== id));
+            }
+        } catch (error) {
             console.error('Error deleting template:', error);
-        } else {
-            setChecklistTemplates(prev => prev.filter(t => t.id !== id));
+            alert('Erreur lors de la suppression');
         }
     };
+
     const handleOpenCreateModal = () => {
         setEditingTemplate(null);
         setIsChecklistModalOpen(true);
@@ -231,10 +357,14 @@ const TemplatesPage = ({ colors }) => {
                         <div key={template.id} className="bg-white rounded-xl shadow-sm border p-6 flex flex-col hover:shadow-md transition-shadow">
                             <div className="flex-grow">
                                 <h3 className="font-bold text-lg text-gray-800 font-['Poppins']">{template.name}</h3>
+                                {template.description && (
+                                    <p className="text-sm text-gray-600 mt-2">{template.description}</p>
+                                )}
                                 <ul className="mt-4 space-y-2 text-sm text-gray-600 list-disc list-inside">
                                     {template.tasks.slice(0, 3).map((task, index) => <li key={index} className="truncate">{task}</li>)}
                                     {template.tasks.length > 3 && <li className="text-gray-400">...et {template.tasks.length - 3} autres</li>}
                                 </ul>
+                                <p className="text-xs text-gray-500 mt-2">{template.tasks.length} tâche(s)</p>
                             </div>
                             <div className="mt-6 pt-4 border-t flex justify-end gap-2">
                                 <button onClick={() => handleOpenEditModal(template)} className="p-2 text-gray-500 hover:text-blue-600"><Edit size={18}/></button>
@@ -248,16 +378,16 @@ const TemplatesPage = ({ colors }) => {
                 isOpen={isChecklistModalOpen} 
                 onRequestClose={() => setIsChecklistModalOpen(false)} 
                 onSave={onSaveTemplate} 
-                colors={colors} 
-                editingTemplate={editingTemplate} 
+                editingTemplate={editingTemplate}
             />
             <ConfirmationModal 
                 isOpen={isConfirmModalOpen}
                 onRequestClose={() => setIsConfirmModalOpen(false)}
                 onConfirm={confirmDelete}
-                title="Confirmer la suppression"
+                title="Supprimer le modèle"
                 message={`Êtes-vous sûr de vouloir supprimer le modèle "${templateToDelete?.name}" ? Cette action est irréversible.`}
-                colors={colors}
+                confirmText="Supprimer"
+                cancelText="Annuler"
             />
         </div>
     );

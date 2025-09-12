@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Trash2 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
 const PhotosTab = ({ site, onUpdateSite, colors }) => {
@@ -111,6 +111,41 @@ const PhotosTab = ({ site, onUpdateSite, colors }) => {
         setPreviews([]);
     };
 
+    const handleDeletePhoto = async (photoId, filePath) => {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette photo ?')) return;
+
+        try {
+            // 1. Supprimer le fichier du storage
+            const { error: storageError } = await supabase.storage
+                .from('photoschantier')
+                .remove([filePath]);
+
+            if (storageError) {
+                console.error('Error deleting from storage:', storageError);
+            }
+
+            // 2. Supprimer l'entrée de la base de données
+            const { error: dbError } = await supabase
+                .from('site_media')
+                .delete()
+                .eq('id', photoId);
+
+            if (dbError) {
+                console.error('Error deleting from database:', dbError);
+                alert('Erreur lors de la suppression de la photo');
+                return;
+            }
+
+            // 3. Recharger les photos
+            await loadPhotos();
+            alert('Photo supprimée avec succès');
+
+        } catch (error) {
+            console.error('Error deleting photo:', error);
+            alert('Une erreur est survenue lors de la suppression');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div>
@@ -152,13 +187,20 @@ const PhotosTab = ({ site, onUpdateSite, colors }) => {
                         {photos.map((photo) => {
                             const { data } = supabase.storage.from('photoschantier').getPublicUrl(photo.file_path);
                             return (
-                                <div key={photo.id} className="relative aspect-square">
+                                <div key={photo.id} className="relative aspect-square group">
                                     <img 
                                         src={data.publicUrl} 
                                         alt={photo.original_filename || 'Photo du chantier'} 
                                         className="w-full h-full object-cover rounded-lg"
                                         title={photo.original_filename}
                                     />
+                                    <button
+                                        onClick={() => handleDeletePhoto(photo.id, photo.file_path)}
+                                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600"
+                                        title="Supprimer cette photo"
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             );
                         })}
