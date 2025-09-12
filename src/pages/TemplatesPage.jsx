@@ -157,20 +157,21 @@ const TemplatesPage = ({ colors }) => {
             const { data: { user } } = await supabase.auth.getUser();
             setUser(user);
             if (user) {
-                fetchChecklistTemplates();
+                // Appeler directement avec le user récupéré
+                await loadChecklistTemplatesForUser(user);
             }
         };
         getUser();
     }, []);
 
-    const fetchChecklistTemplates = async () => {
-        if (!user) return;
+    const loadChecklistTemplatesForUser = async (currentUser) => {
+        if (!currentUser) return;
 
         // D'abord récupérer le company_id de l'utilisateur
         const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('company_id')
-            .eq('id', user.id)
+            .eq('id', currentUser.id)
             .single();
 
         if (profileError || !profile) {
@@ -209,6 +210,11 @@ const TemplatesPage = ({ colors }) => {
         );
 
         setChecklistTemplates(templatesWithTasks);
+    };
+
+    const fetchChecklistTemplates = async () => {
+        if (!user) return;
+        await loadChecklistTemplatesForUser(user);
     };
 
     const onSaveTemplate = async (template) => {
