@@ -275,12 +275,12 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
       return;
     }
     if (!cleanName) {
-      setError("Merci d’indiquer votre nom complet.");
+      setError("Merci d'indiquer votre nom complet.");
       setLoading(false);
       return;
     }
     if (!cleanEmail) {
-      setError("Merci d’indiquer votre adresse e-mail.");
+      setError("Merci d'indiquer votre adresse e-mail.");
       setLoading(false);
       return;
     }
@@ -291,40 +291,28 @@ const SignupPage = ({ onSwitchToLogin, colors, companyInfo }) => {
     }
 
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: password,
-        options: {
-          data: {
-            full_name: cleanName,
-            company_name: cleanCompany,
-            role: 'admin', // Le créateur sera admin/owner côté DB
-          },
-        },
+      // Call the Edge Function for complete signup process
+      const { data, error } = await supabase.functions.invoke('signup-user', {
+        body: {
+          email: cleanEmail,
+          password: password,
+          full_name: cleanName,
+          company_name: cleanCompany
+        }
       });
 
-      if (authError) {
-        throw authError;
+      if (error) {
+        throw new Error(error.message || 'Erreur lors de la création du compte');
       }
 
-      // Créer l'entreprise et le profil pour tout utilisateur créé avec succès
-      if (authData?.user) {
-        const result = await createCompanyAndProfile(authData.user, cleanCompany, cleanName);
-        if (!result.success) {
-          console.error('Erreur création entreprise/profil:', result.error);
-          throw new Error(`Erreur lors de la création de l'entreprise: ${result.error.message || result.error}`);
-        }
-        console.log('✅ Entreprise et profil créés avec succès');
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      if (authData?.user) {
-        setSuccessMessage(
-          "Compte créé avec succès ! Vérifiez votre boîte mail pour confirmer votre inscription."
-        );
+      if (data?.success) {
+        setSuccessMessage(data.message || "Compte créé avec succès ! Vous pouvez maintenant vous connecter.");
       } else {
-        setSuccessMessage(
-          "Demande de création de compte envoyée ! Vérifiez votre e-mail pour confirmer."
-        );
+        throw new Error('Erreur inconnue lors de la création du compte');
       }
     } catch (err) {
       console.error('Erreur création utilisateur:', err);
