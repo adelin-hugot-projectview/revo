@@ -177,21 +177,29 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
             }
 
             // Créer une nouvelle checklist basée sur le template
+            const checklistData = {
+                site_id: site.id,
+                template_id: templateId,
+                created_by: user.id,
+                name: template.name,
+                description: template.description
+            };
+
+            console.log('Creating checklist with data:', checklistData);
+            console.log('Site ID:', site.id);
+            console.log('User ID:', user.id);
+            console.log('Template ID:', templateId);
+
             const { data: newChecklist, error: checklistError } = await supabase
                 .from('site_checklists')
-                .insert({
-                    site_id: site.id,
-                    template_id: templateId,
-                    created_by: user.id,
-                    name: template.name,
-                    description: template.description
-                })
+                .insert(checklistData)
                 .select()
                 .single();
 
             if (checklistError) {
                 console.error('Error creating checklist:', checklistError);
-                alert('Erreur lors de la création de la checklist');
+                console.error('Checklist data:', checklistData);
+                alert(`Erreur lors de la création de la checklist: ${checklistError.message}`);
                 return;
             }
 
@@ -205,14 +213,18 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
                 requires_photo: item.requires_photo || false
             }));
 
+            console.log('Creating checklist items:', tasksToInsert);
+
             const { error: insertError } = await supabase
                 .from('site_checklist_items')
                 .insert(tasksToInsert);
 
             if (insertError) {
                 console.error('Error creating checklist items:', insertError);
-                alert('Erreur lors de la création des tâches');
+                console.error('Tasks to insert:', tasksToInsert);
+                alert(`Erreur lors de la création des tâches: ${insertError.message}`);
             } else {
+                console.log('Checklist applied successfully!');
                 await loadChecklists();
             }
 
