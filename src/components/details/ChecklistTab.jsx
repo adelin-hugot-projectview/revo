@@ -116,15 +116,12 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
             is_completed: false
         };
 
-        console.log('Adding task with data:', taskData);
-
         const { error } = await supabase
             .from('site_checklist_items')
             .insert(taskData);
 
         if (error) {
             console.error('Error adding task:', error);
-            console.error('Task data:', taskData);
             alert(`Erreur lors de l'ajout de la tâche: ${error.message}`);
         } else {
             setNewTaskText('');
@@ -150,9 +147,6 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
 
     const handleApplyTemplate = async (e) => {
         const templateId = e.target.value;
-        console.log('🎯 Template selected:', templateId);
-        console.log('📋 Available templates:', checklistTemplates);
-        
         if (!templateId || !user) return;
 
         try {
@@ -162,8 +156,6 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
                 .select('*')
                 .eq('id', templateId)
                 .single();
-                
-            console.log('✅ Template fetched:', template);
 
             if (templateError) {
                 console.error('Error loading template:', templateError);
@@ -175,8 +167,6 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
                 .select('*')
                 .eq('template_id', templateId)
                 .order('position', { ascending: true });
-                
-            console.log('📝 Template items fetched:', templateItems);
 
             if (itemsError) {
                 console.error('Error loading template items:', itemsError);
@@ -192,11 +182,6 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
                 description: template.description
             };
 
-            console.log('Creating checklist with data:', checklistData);
-            console.log('Site ID:', site.id);
-            console.log('User ID:', user.id);
-            console.log('Template ID:', templateId);
-
             const { data: newChecklist, error: checklistError } = await supabase
                 .from('site_checklists')
                 .insert(checklistData)
@@ -205,7 +190,6 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
 
             if (checklistError) {
                 console.error('Error creating checklist:', checklistError);
-                console.error('Checklist data:', checklistData);
                 alert(`Erreur lors de la création de la checklist: ${checklistError.message}`);
                 return;
             }
@@ -220,18 +204,14 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
                 requires_photo: item.requires_photo || false
             }));
 
-            console.log('Creating checklist items:', tasksToInsert);
-
             const { error: insertError } = await supabase
                 .from('site_checklist_items')
                 .insert(tasksToInsert);
 
             if (insertError) {
                 console.error('Error creating checklist items:', insertError);
-                console.error('Tasks to insert:', tasksToInsert);
                 alert(`Erreur lors de la création des tâches: ${insertError.message}`);
             } else {
-                console.log('Checklist applied successfully!');
                 await loadChecklists();
             }
 
@@ -280,54 +260,53 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
         );
     }
 
+    // Vue unifiée de toutes les tâches (sans séparation par checklist)
+    const allTasks = checklistItems.sort((a, b) => {
+        // Trier par position puis par date de création
+        if (a.position !== b.position) {
+            return a.position - b.position;
+        }
+        return new Date(a.created_at) - new Date(b.created_at);
+    });
+    const completedTasks = allTasks.filter(task => task.is_completed).length;
+
     return (
         <div className="space-y-4">
-            {checklists.map(checklist => {
-                const checklistTasks = checklistItems.filter(item => item.checklist_id === checklist.id);
-                const completedChecklistTasks = checklistTasks.filter(item => item.is_completed).length;
-                
-                return (
-                    <div key={checklist.id} className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold text-gray-700">{checklist.name}</h3>
-                            <span className="text-sm text-gray-500">
-                                {completedChecklistTasks} / {checklistTasks.length} terminée(s)
-                            </span>
+            {/* Compteur global de progression */}
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-700">Checklist du chantier</h3>
+                <span className="text-sm text-gray-500">
+                    {completedTasks} / {allTasks.length} terminée(s)
+                </span>
+            </div>
+
+            {/* Liste unifiée de toutes les tâches */}
+            <div className="space-y-2">
+                {allTasks.map((task) => (
+                    <div key={task.id} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                        task.is_completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
+                    }`}>
+                        <div className="flex items-center space-x-3 flex-1">
+                            <button onClick={() => handleToggleTask(task.id)} className={`flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+                                task.is_completed ? 'bg-green-600 border-green-600 text-white' : 'border-gray-300 hover:border-green-500'
+                            }`}>
+                                {task.is_completed && <CheckSquare size={14} />}
+                            </button>
+                            <div className="flex-1">
+                                <span className={`text-sm ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-700'}`}>
+                                    {task.title}
+                                </span>
+                                {task.description && (
+                                    <p className="text-xs text-gray-500 mt-1">{task.description}</p>
+                                )}
+                            </div>
                         </div>
-                        
-                        {checklist.description && (
-                            <p className="text-sm text-gray-600">{checklist.description}</p>
-                        )}
-                        
-                        <div className="space-y-2">
-                            {checklistTasks.map((task) => (
-                                <div key={task.id} className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                                    task.is_completed ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'
-                                }`}>
-                                    <div className="flex items-center space-x-3 flex-1">
-                                        <button onClick={() => handleToggleTask(task.id)} className={`flex-shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
-                                            task.is_completed ? 'bg-green-600 border-green-600 text-white' : 'border-gray-300 hover:border-green-500'
-                                        }`}>
-                                            {task.is_completed && <CheckSquare size={14} />}
-                                        </button>
-                                        <div className="flex-1">
-                                            <span className={`text-sm ${task.is_completed ? 'line-through text-gray-500' : 'text-gray-700'}`}>
-                                                {task.title}
-                                            </span>
-                                            {task.description && (
-                                                <p className="text-xs text-gray-500 mt-1">{task.description}</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <button onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:text-red-700 transition-colors">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                        <button onClick={() => handleDeleteTask(task.id)} className="text-red-500 hover:text-red-700 transition-colors">
+                            <Trash2 size={16} />
+                        </button>
                     </div>
-                );
-            })}
+                ))}
+            </div>
 
             <form onSubmit={handleAddTask} className="flex space-x-2">
                 <input type="text" value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} placeholder="Ajouter une nouvelle tâche..." className="flex-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" />
