@@ -109,18 +109,23 @@ const ChecklistTab = ({ site, checklistTemplates, onUpdateSite }) => {
         const maxPosition = Math.max(...checklistItems.filter(i => i.checklist_id === targetChecklistId).map(i => i.position), 0);
 
         // Ajouter la tâche
+        const taskData = {
+            checklist_id: targetChecklistId,
+            title: newTaskText.trim(),
+            position: maxPosition + 1,
+            is_completed: false
+        };
+
+        console.log('Adding task with data:', taskData);
+
         const { error } = await supabase
             .from('site_checklist_items')
-            .insert({
-                checklist_id: targetChecklistId,
-                title: newTaskText.trim(),
-                position: maxPosition + 1,
-                is_completed: false
-            });
+            .insert(taskData);
 
         if (error) {
             console.error('Error adding task:', error);
-            alert('Erreur lors de l\'ajout de la tâche');
+            console.error('Task data:', taskData);
+            alert(`Erreur lors de l'ajout de la tâche: ${error.message}`);
         } else {
             setNewTaskText('');
             await loadChecklists();

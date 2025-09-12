@@ -253,7 +253,8 @@ const TemplatesPage = ({ colors }) => {
 
                     if (itemsError) {
                         console.error('Error updating template items:', itemsError);
-                        alert('Erreur lors de la mise à jour des tâches');
+                        console.error('Items to insert:', itemsToInsert);
+                        alert(`Erreur lors de la mise à jour des tâches: ${itemsError.message}`);
                         return;
                     }
                 }
@@ -304,7 +305,8 @@ const TemplatesPage = ({ colors }) => {
 
                     if (itemsError) {
                         console.error('Error creating template items:', itemsError);
-                        alert('Erreur lors de la création des tâches');
+                        console.error('Items to insert:', itemsToInsert);
+                        alert(`Erreur lors de la création des tâches: ${itemsError.message}`);
                         return;
                     }
                 }
