@@ -49,16 +49,11 @@ serve(async (req: Request) => {
       }
     )
 
-    // 1. Create the user with Supabase Auth
+    // 1. Create the user with Supabase Auth (simplified for debugging)
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
-      email_confirm: false, // Set to true if you want to skip email confirmation
-      user_metadata: {
-        full_name: full_name,
-        company_name: company_name,
-        role: 'admin'
-      }
+      email_confirm: true, // Skip email confirmation for now
     })
 
     if (authError) {
@@ -135,7 +130,7 @@ serve(async (req: Request) => {
 
     // 4. Create default kanban statuses
     const defaultStatuses = [
-      { name: 'À planifier', color: '#6B7280', position: 1, is_default: true },
+      { name: 'À faire', color: '#6B7280', position: 1, is_default: true },
       { name: 'En cours', color: '#F59E0B', position: 2 },
       { name: 'En attente', color: '#EF4444', position: 3 },
       { name: 'Terminé', color: '#10B981', position: 4 },
@@ -157,23 +152,35 @@ serve(async (req: Request) => {
       // Don't rollback everything for status creation failure, just log it
     }
 
-    // 5. Try to initialize company with RPC (if it exists)
+    // Company initialization is now handled entirely by this Edge Function
+    console.log('✅ Entreprise initialisée avec les données par défaut')
+
+    // 6. Send welcome email
     try {
-      const { error: initError } = await supabaseAdmin.rpc('initialize_company', {
-        company_uuid: company.id
-      })
-      
-      if (initError) {
-        console.warn('RPC initialize_company failed:', initError.message)
+      const { error: emailError } = await supabaseAdmin.auth.admin.inviteUserByEmail(
+        email,
+        {
+          redirectTo: `${Deno.env.get('SITE_URL') || 'https://revo1.netlify.app'}/login`,
+          data: {
+            full_name: full_name,
+            company_name: company_name,
+            welcome_email: true
+          }
+        }
+      )
+
+      if (emailError) {
+        console.warn('Error sending welcome email:', emailError)
+        // Don't fail the signup if email fails
       }
-    } catch (error) {
-      console.warn('RPC initialize_company not available:', error)
+    } catch (emailError) {
+      console.warn('Welcome email not sent:', emailError)
     }
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Compte créé avec succès ! Vous pouvez maintenant vous connecter.',
+        message: 'Compte créé avec succès ! Vérifiez votre boîte mail pour vous connecter.',
         user_id: user.id,
         company_id: company.id
       }),
